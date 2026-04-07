@@ -348,7 +348,7 @@ function App() {
     // 3-second delay
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    await await callApi("vend-success", { itemNumber: index });
+    await callApi("vend-success", { itemNumber: index });
     await callApi("close-session");
 
     await waitForStatus((s) => !s?.session_is_open, 20000);
