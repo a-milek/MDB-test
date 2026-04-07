@@ -79,16 +79,6 @@ function App() {
   type Locale = (typeof LOCALES)[keyof typeof LOCALES];
   const [locale, setLocale] = useState<Locale>(LOCALES.ENGLISH);
 
-  const getStatus = async () => {
-    try {
-      const res = await fetch("http://192.168.21.108:3000/status");
-      const data = await res.json();
-
-      return data.data;
-    } catch (err) {
-      console.error("status ERROR:", err);
-    }
-  };
   const statusRef = useRef(status);
 
   useEffect(() => {
