@@ -1,5 +1,7 @@
+import type { MdbStatus } from "../App";
+
 interface Props {
-  status: unknown;
+  status: MdbStatus | null;
 }
 const Status = ({ status }: Props) => {
   return (

@@ -1,23 +1,9 @@
 import { Flex, Box, VStack, Text, HStack } from "@chakra-ui/react";
 import { useIntl } from "react-intl";
-
-interface Status {
-  session_is_open: boolean;
-  session_is_requested_to_cancel: boolean;
-  credit_requested: number;
-  session_vend_aproved: boolean;
-  credit?: number;
-  cash_credit?: number;
-  cashless_credit?: number;
-  is_unsuficient_change_state?: boolean;
-  max_allowed_credit: number;
-  is_cash_only: boolean;
-  is_card_only: boolean;
-  is_notes_not_accepted: boolean;
-}
+import type { MdbStatus } from "../App";
 
 interface Props {
-  status: Status | null;
+  status: MdbStatus | null;
   sugar: number;
   tech: boolean;
 }

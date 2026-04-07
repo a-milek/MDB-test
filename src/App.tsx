@@ -22,6 +22,22 @@ import LoadingScreen from "./components/LoadingScreen";
 import SugarPanel from "./components/Sugar";
 import TechKeyboard from "./components/TechKeyboard";
 
+export interface MdbStatus {
+  is_error_state: boolean;
+  is_service_state: boolean;
+  is_unsuficient_change_state: boolean;
+  is_cash_only: boolean;
+  is_card_only: boolean;
+  is_notes_not_accepted: boolean;
+  session_is_open: boolean;
+  session_is_requested_to_cancel: boolean;
+  session_vend_aproved: boolean;
+  credit_requested: number;
+  cash_credit: number;
+  cashless_credit: number;
+  max_allowed_credit: number;
+}
+
 function App() {
   const autoResumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // --- UI & state control ---
@@ -64,7 +80,7 @@ function App() {
       .forEach((img) => img.setAttribute("draggable", "false"));
   }, []);
 
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<MdbStatus | null>(null);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
