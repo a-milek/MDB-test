@@ -1,0 +1,19 @@
+{
+  "session_open": "Select a drink",
+  "session_closed": "Session closed",
+  "picked_drink": "Drink selected",
+  "drink_preparing": "Preparing your drink",
+  "credit": "Credit: {amount} zł",
+  "price": "Price: {price} zł",
+  "unsuficient_change": "Please insert the correct amount",
+  "cash_only": "Cash only",
+  "card_only": "Card payment only",
+  "notes_not_accepted": "We do not accept banknotes",
+  "button.open_session": "Open session",
+  "button.close_session": "Close session",
+  "button.vend_item": "Vend item",
+  "button.vend_success": "Vend successful",
+  "button.get_status": "Get status",
+  "out_of_order.title": "Out of order",
+  "out_of_order.message": "The machine is currently out of order. Please try again later."
+}

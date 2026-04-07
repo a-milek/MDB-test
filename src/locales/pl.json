@@ -1,0 +1,19 @@
+{
+  "session_open": "Wybierz napój",
+  "session_closed": "Sesja zamknięta",
+  "picked_drink": "Wybrano napój",
+  "drink_preparing": "Robienie napoju",
+  "credit": "Kredyt: {amount} zł",
+  "price": "Cena: {price} zł",
+  "unsuficient_change": "Wrzuć wyliczoną kwotę",
+  "cash_only": "Tylko gotówka",
+  "card_only": "Płatność tylko kartą",
+  "notes_not_accepted": "Nie przyjmujemy banknotów",
+  "button.open_session": "Otwórz sesję",
+  "button.close_session": "Zamknij sesję",
+  "button.vend_item": "Wydaj napój",
+  "button.vend_success": "Płatność zaakceptowana",
+  "button.get_status": "Pobierz status",
+  "out_of_order.title": "Automat nieczynny",
+  "out_of_order.message": "Automat jest obecnie nieczynny. Prosimy spróbować ponownie później."
+}
