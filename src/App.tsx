@@ -149,7 +149,7 @@ function App() {
 
     function connect() {
       if (disposed) return;
-      ws = new WebSocket("ws://192.168.21.108:3001");
+      ws = new WebSocket(import.meta.env.VITE_MDB_WS_URL);
 
       ws.onmessage = (event) => {
         try {
@@ -191,7 +191,7 @@ function App() {
 
     function connect() {
       if (disposed) return;
-      ws = new WebSocket("ws://localhost:9000");
+      ws = new WebSocket(import.meta.env.VITE_INTERPRETER_WS_URL);
 
       ws.onopen = () => {
         console.log("Connected to interpreter WS (9000)");
@@ -247,7 +247,7 @@ function App() {
   const callApi = async (endpoint: string, body?: any) => {
     console.log(endpoint);
     try {
-      const res = await fetch(`http://192.168.21.108:3000/${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/${endpoint}`, {
         method: body ? "POST" : "GET",
         headers: { "Content-Type": "application/json" },
         body: body ? JSON.stringify(body) : undefined,

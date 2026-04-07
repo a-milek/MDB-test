@@ -2,13 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const MdbPayService = require("mdb_pay_service");
 
+require("dotenv").config();
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
 const apiClient = MdbPayService.ApiClient.instance;
-apiClient.basePath = "http://localhost:8080/ota-977/MDBPay/1.0.0";
+apiClient.basePath = process.env.MDB_BASE_PATH;
 
 const api = new MdbPayService.DevelopersApi();
 console.log("Server loaded");
@@ -85,17 +87,19 @@ app.get("/status", (req, res) => {
 });
 
 
-app.listen(3000, () => {
-  console.log("MDB backend running on port 3000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`MDB backend running on port ${PORT}`);
 
 });
 
 
 const WebSocket = require("ws");
 
-const MDB_WS = "ws://localhost:8080/ota-977/MDBPay/1.0.0/ws";
+const MDB_WS = `${process.env.MDB_BASE_PATH}/ws`;
+const WS_PORT = process.env.WS_PORT || 3001;
 
-const wss = new WebSocket.Server({ port: 3001 });
+const wss = new WebSocket.Server({ port: WS_PORT });
 
 wss.on("connection", (client) => {
   console.log("Frontend connected to watch");
