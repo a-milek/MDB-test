@@ -339,24 +339,30 @@ function App() {
   };
 
   async function handleProduct(index: number) {
-    await callApi("vend-request", {
-      price: coffeeList[index].price,
-      itemNumber: index,
-    });
+    try {
+      await callApi("vend-request", {
+        price: coffeeList[index].price,
+        itemNumber: index,
+      });
 
-    // Wait until vend is approved
-    await waitForStatus((s) => s?.session_vend_aproved);
-    await click_button(coffeeList[index].servId);
+      // Wait until vend is approved
+      await waitForStatus((s) => s?.session_vend_aproved);
+      await click_button(coffeeList[index].servId);
 
-    // 3-second delay
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+      // 3-second delay
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    await callApi("vend-success", { itemNumber: index });
-    await callApi("close-session");
+      await callApi("vend-success", { itemNumber: index });
+      await callApi("close-session");
 
-    await waitForStatus((s) => !s?.session_is_open, 20000);
+      await waitForStatus((s) => !s?.session_is_open, 20000);
 
-    await callApi("open-session");
+      await callApi("open-session");
+    } catch (err) {
+      console.error("Vend flow failed:", err);
+      await callApi("close-session");
+      await callApi("open-session");
+    }
   }
   useEffect(() => {
     return () => {
