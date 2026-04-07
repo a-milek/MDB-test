@@ -7,7 +7,6 @@ import {
 } from "react";
 import { Box, useDisclosure, VisuallyHidden } from "@chakra-ui/react";
 import CoffeeGrid from "./components/CoffeeGrid";
-import CoffeeData from "./config/CoffeeData";
 import Screen from "./components/Screen";
 import Status from "./components/Status";
 import OutOfOrderModal from "./components/OutOfOrderModal";
@@ -47,8 +46,12 @@ function App() {
 
   // --- Coffee List ---
   const [coffeeList, setCoffeeList] = useState(() => {
-    const stored = localStorage.getItem("coffee-prices");
-    return stored ? JSON.parse(stored) : coffeeData;
+    try {
+      const stored = localStorage.getItem("coffee-prices");
+      return stored ? JSON.parse(stored) : coffeeData;
+    } catch {
+      return coffeeData;
+    }
   });
   useEffect(() => {
     localStorage.setItem("coffee-prices", JSON.stringify(coffeeList));
@@ -337,7 +340,7 @@ function App() {
 
   async function handleProduct(index: number) {
     await callApi("vend-request", {
-      price: CoffeeData[index].price,
+      price: coffeeList[index].price,
       itemNumber: index,
     });
 
