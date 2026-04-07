@@ -155,7 +155,7 @@ const CoffeeGrid = ({
               onClickCapture={() => handleCoffeeClick(index)}
               borderWidth="3px"
               borderColor={selectedIndex === index ? "white" : "black"}
-              borderRadius="lg"
+              borderRadius="xl"
               transition="border-color 0.3s ease"
               cursor="none"
             >
@@ -169,14 +169,14 @@ const CoffeeGrid = ({
               />
               <Text
                 position="absolute"
-                bottom={3}
-                left={3}
+                bottom={0}
+                left={0}
                 bg="white"
+                opacity={"70%"}
                 color="#242424"
-                width="30%"
-                height="30%"
-                borderRadius="full"
-                fontSize="l"
+                width="100%"
+                height="25%"
+                fontSize="xl"
                 fontWeight="bold"
                 display="flex"
                 alignItems="center"
