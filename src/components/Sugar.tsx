@@ -2,49 +2,27 @@ import { AspectRatio, Box, Flex, HStack, Image } from "@chakra-ui/react";
 // import ScreenInterpreter from "./ScreenInterpreter";
 import key_config from "../config/KeyConfig";
 import Screen from "./Screen";
+import type { MdbStatus } from "../App";
+
 interface Props {
   onClick: (index: number) => void;
-  lines: string[];
-  setTech: (value: boolean) => void;
-  setProgress: (value: number) => void;
-  setReady: (vlue: boolean) => void;
-  setCurrentPrice: (price: number | null) => void;
-  setIsTimedOut: (value: boolean) => void;
-  setLoading: (value: boolean) => void; // dodaj to
+  lines?: string[];
+  setTech?: (value: boolean) => void;
+  setProgress?: (value: number) => void;
+  setReady?: (value: boolean) => void;
+  setCurrentPrice?: (price: number | null) => void;
+  setIsTimedOut?: (value: boolean) => void;
+  setLoading?: (value: boolean) => void;
   tech: boolean;
-  setHasCredit: (value: boolean) => void;
-  clearAutoResumeTimer: () => void;
-  status: Status | null;
+  setHasCredit?: (value: boolean) => void;
+  clearAutoResumeTimer?: () => void;
+  status: MdbStatus | null;
   sugar: number;
-}
-
-interface Status {
-  session_is_open: boolean;
-  session_is_requested_to_cancel: boolean;
-  credit_requested: number;
-  session_vend_aproved: boolean;
-  credit?: number;
-  cash_credit?: number;
-  cashless_credit?: number;
-  is_unsuficient_change_state?: boolean;
-  max_allowed_credit: number;
-  is_cash_only: boolean;
-  is_card_only: boolean;
-  is_notes_not_accepted: boolean;
 }
 
 const SugarPanel = ({
   onClick,
-  lines,
-  setTech,
-  setProgress,
-  setReady,
-  setCurrentPrice,
-  setLoading,
   tech,
-  setIsTimedOut,
-  setHasCredit,
-  clearAutoResumeTimer,
   status,
   sugar,
 }: Props) => {

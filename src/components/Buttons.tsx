@@ -10,25 +10,25 @@ const Buttons = ({ callApi }: ButtonsProps) => {
   const intl = useIntl();
   return (
     <HStack alignContent={"center"}>
-      <Button colorScheme={"blue"} onClick={() => callApi("open-session")}>
+      <Button colorScheme={"blue"} onClick={() => callApi("sessionOpen")}>
         {intl.formatMessage({ id: "button.open_session" })}
       </Button>
-      <Button colorScheme={"blue"} onClick={() => callApi("close-session")}>
+      <Button colorScheme={"blue"} onClick={() => callApi("sessionClose")}>
         {intl.formatMessage({ id: "button.close_session" })}
       </Button>
       <Button
         colorScheme={"blue"}
-        onClick={() => callApi("vend-request", { price: 2.5, itemNumber: 2 })}
+        onClick={() => callApi("vendRequest", { price: 2.5, itemNumber: 2 })}
       >
         {intl.formatMessage({ id: "button.vend_item" })}
       </Button>
       <Button
         colorScheme={"blue"}
-        onClick={() => callApi("vend-success", { itemNumber: 2 })}
+        onClick={() => callApi("vendSuccess", { itemNumber: 2 })}
       >
         {intl.formatMessage({ id: "button.vend_success" })}
       </Button>
-      <Button colorScheme={"blue"} onClick={() => callApi("status")}>
+      <Button colorScheme={"blue"} onClick={() => callApi("getStatus")}>
         {intl.formatMessage({ id: "button.get_status" })}
       </Button>
     </HStack>

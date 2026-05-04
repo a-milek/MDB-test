@@ -1,0 +1,234 @@
+openapi: 3.0.0
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: 'https://virtserver.swaggerhub.com/ota-977/MDBPay/1.0.0'
+info:
+  description: API to MDB Pay service handling whole communication with MDB devices
+  version: 1.0.0
+  title: MDB Pay Service
+  contact:
+    email: you@your-company.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: developers
+    description: Operations available to regular developers
+paths:
+  /getStatus:
+    get:4,
+      tags:
+        - developers
+      operationId: get_status_get
+      summary: Get current pay manager status
+      description: |
+        Returns a snapshot of the current state of the MDB Pay service.
+        Use this endpoint to check whether a session is open, whether a vend
+        has been approved, or whether the machine is in an error or service state.
+        Safe to call at any time — does not modify any state.
+
+        **Avoid polling this endpoint.** For real-time status updates, connect to
+        the `/ws` WebSocket endpoint instead — it pushes `status_changed` events
+        whenever state changes, eliminating the need for repeated polling.
+      responses:
+        '200':
+          description: Current pay manager status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusInformation'
+              example:
+                session_is_open: false
+                is_error_state: false
+                is_service_state: false
+                is_unsuficient_change_state: false
+                session_is_requested_to_cancel: false
+                credit_requested: 0.0
+                session_vend_aproved: false
+                max_allowed_credit: 7.0
+
+  /sessionOpen:
+    get:
+      tags:
+        - developers
+      operationId: session_open_get
+      summary: Request to open a payment session
+      description: |
+        Requests the pay system to open a payment session, enabling cash and
+        cashless payment devices (coin changer, bill validator, card reader).
+
+        This is a request only — the call returns immediately with HTTP 200 to
+        confirm the request was accepted. The actual session state is reflected
+        in the `session_is_open` field of `/getStatus`. Monitor `/ws` for
+        `status_changed` events to know when the session is effectively open.
+
+        A session must be opened before any vend flow can be initiated.
+      responses:
+        '200':
+          description: Session open request accepted — no response body
+
+  /vendRequest:
+    get:
+      tags:
+        - developers
+      operationId: vend_request_get
+      summary: Request a vend
+      description: |
+        Informs the pay system that a product has been selected for purchase at
+        the given price.
+
+        **Requires an open session.** Call `/sessionOpen` first and wait for
+        `session_is_open: true` in `/getStatus` before calling this endpoint.
+
+        Once called, the pay system prompts the customer to insert coins, bills,
+        or present a cashless card (e.g. contactless payment). The pay system
+        accumulates credit as the customer inserts money. When sufficient credit
+        is available to cover the requested price, the pay system sets
+        `session_vend_aproved: true` in `/getStatus` and emits a `status_changed`
+        event on `/ws`. The client should monitor `/ws` for this event and, upon
+        receiving approval, start preparing or dispensing the product.
+
+        Once the product has been successfully delivered, call `/vendSuccess` to
+        finalize the transaction.
+      parameters:
+        - in: query
+          name: price
+          description: Price of the item to be purchased
+          required: true
+          schema:
+            type: number
+            format: double
+        - in: query
+          name: itemNumber
+          description: Item number to vend — must match the itemNumber provided in /vendSuccess
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Vend request accepted
+        '400':
+          description: No active session — call /sessionOpen first
+
+  /vendSuccess:
+    get:
+      tags:
+        - developers
+      operationId: vend_success_get
+      summary: Confirm item was dispensed
+      description: |
+        Notifies the pay system that the product has been successfully delivered
+        to the customer. This finalizes the transaction — funds that were previously
+        reserved (bills in escrow, coins in temporary hold, cashless pre-authorization)
+        are now consumed and the sale is considered complete.
+
+        Must be called only after the product has been physically delivered and
+        only when `session_vend_aproved` is true.
+
+        **Requires an open session.** Returns an error if no session is open.
+      parameters:
+        - in: query
+          name: itemNumber
+          description: Item number that was dispensed — must match the itemNumber provided in /vendRequest
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Vend success acknowledged
+        '400':
+          description: No active session — call /sessionOpen first
+
+  /sessionClose:
+    get:
+      tags:
+        - developers
+      operationId: session_close_get
+      summary: Close the current payment session
+      description: |
+        Requests the pay system to close the active payment session.
+
+        This is a request only — the call returns immediately with HTTP 200 to
+        confirm the request was accepted. The actual session state is reflected
+        in `session_is_open` in `/getStatus`. Monitor `/ws` for `status_changed`
+        events to know when the session is effectively closed.
+
+        This endpoint is idempotent — it is safe to call even when no session
+        is currently open.
+
+        If `/getStatus` reports `session_is_requested_to_cancel: true`, the pay
+        system has determined that the current session cannot be continued (e.g.
+        payment device error, timeout, or insufficient change). The client must
+        call `/sessionClose` in response to this state.
+
+        On session close, all pending transactions are terminated. Any uncommitted
+        funds (bills or coins not yet applied to a completed vend) are returned to
+        the customer. Change owed from a completed vend is also dispensed at this
+        point. Funds already finalized via `/vendSuccess` are not affected.
+      responses:
+        '200':
+          description: Session close request accepted — no response body
+
+  /ws:
+    get:
+      tags:
+        - developers
+      operationId: ws
+      summary: Subscribe to live status updates via WebSocket
+      description: |
+        WebSocket endpoint that pushes real-time status updates to connected clients.
+        Emits `status_changed` events whenever the pay manager state changes, and
+        `status_snapshot` events with the current state upon connection.
+        Use this instead of polling `/getStatus`.
+      responses:
+        '101':
+          description: Switching Protocols — WebSocket connection established
+
+components:
+  schemas:
+    StatusInformation:
+      type: object
+      properties:
+        session_is_open:
+          type: boolean
+          description: True if a payment session is currently open
+        session_is_requested_to_cancel:
+          type: boolean
+          description: >
+            True if the pay system is requesting the client to close the session.
+            This occurs when the session cannot be continued (e.g. payment device
+            error, timeout, or insufficient change). The client must call
+            `/sessionClose` when this flag is true.
+        credit_requested:
+          type: number
+          format: double
+          description: >
+            The price (in currency units) of the item requested via /vendRequest.
+            Zero when no vend request is active.
+        session_vend_aproved:
+          type: boolean
+          description: >
+            True when sufficient credit has been received for the requested vend price.
+            At this point funds are reserved but not yet finalized — bills may be held
+            in escrow position, coins in a temporary escrow area, or funds blocked/
+            pre-authorized on a cashless card. Funds can still be returned if the
+            transaction is cancelled.
+            The client should start preparing or dispensing the product as soon as
+            this flag becomes true. Only after the product has been successfully
+            delivered should /vendSuccess be called to finalize the transaction
+            and release the reserved funds.
+        is_error_state:
+          type: boolean
+          description: True if the service is in an error state
+        is_service_state:
+          type: boolean
+          description: True if the machine is in service/maintenance mode
+        is_unsuficient_change_state:
+          type: boolean
+          description: True if the coin changer does not have sufficient change to complete a transaction
+        max_allowed_credit:
+          type: number
+          format: double
+          description: Maximum credit allowed per session (in currency units)

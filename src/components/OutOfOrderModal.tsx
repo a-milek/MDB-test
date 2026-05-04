@@ -3,10 +3,8 @@ import {
   ModalOverlay,
   ModalContent,
   ModalHeader,
-  ModalCloseButton,
   ModalBody,
   ModalFooter,
-  Button,
   Text,
 } from "@chakra-ui/react";
 import { useIntl } from "react-intl";

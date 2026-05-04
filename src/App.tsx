@@ -1,17 +1,11 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, useDisclosure, VisuallyHidden } from "@chakra-ui/react";
 import CoffeeGrid from "./components/CoffeeGrid";
-import Screen from "./components/Screen";
+// import Screen from "./components/Screen";
 import Status from "./components/Status";
 import OutOfOrderModal from "./components/OutOfOrderModal";
 import { useIdleTimer } from "react-idle-timer";
-import TimeoutScreen from "./components/TimeoutScreen";
+// import TimeoutScreen from "./components/TimeoutScreen";
 import { IntlProvider } from "react-intl";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import pl from "./locales/pl.json";
@@ -41,7 +35,7 @@ export interface MdbStatus {
 function App() {
   const autoResumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // --- UI & state control ---
-  const [isTimedOut, setIsTimedOut] = useState(false);
+  const [, /* isTimedOut */ setIsTimedOut] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [lines, setLines] = useState<string[]>(["Oczekiwanie na dane"]);
   const [tech, setTech] = useState(false);
@@ -84,8 +78,8 @@ function App() {
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const [presence, setPresence] = useState<boolean>(false);
-  const [distance, setDistance] = useState<number | null>(null);
+  // const [presence, setPresence] = useState<boolean>(false);
+  // const [distance, setDistance] = useState<number | null>(null);
 
   const messages = { pl, en };
   const LOCALES = {
@@ -244,16 +238,20 @@ function App() {
       ws?.close();
     };
   }, []);
-  const callApi = async (endpoint: string, body?: any) => {
+  const callApi = async (endpoint: string, params?: Record<string, any>) => {
     console.log(endpoint);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/${endpoint}`, {
-        method: body ? "POST" : "GET",
-        headers: { "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      const data = await res.json();
-      if (endpoint === "status") {
+      let url = `${import.meta.env.VITE_API_URL}/${endpoint}`;
+      if (params) {
+        const query = new URLSearchParams(
+          Object.entries(params).map(([k, v]) => [k, String(v)]),
+        ).toString();
+        url += `?${query}`;
+      }
+      const res = await fetch(url);
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      if (endpoint === "getStatus") {
         setStatus(data.data);
       }
       return data.data;
@@ -263,13 +261,13 @@ function App() {
   };
   useEffect(() => {
     if (status?.session_is_requested_to_cancel) {
-      callApi("close-session");
-      callApi("open-session");
+      callApi("sessionClose");
+      callApi("sessionOpen");
     }
   }, [status]);
   // async function handleProduct(index: number) {
   //   try {
-  //     await callApi("vend-request", {
+  //     await callApi("vendRequest", {
   //       price: CoffeeData[index].price,
   //       itemNumber: index,
   //     });
@@ -279,17 +277,17 @@ function App() {
   //     await new Promise((resolve) => setTimeout(resolve, 3000));
 
   //     await callApi("vend-success", { itemNumber: index });
-  //     await callApi("close-session");
+  //     await callApi("sessionClose");
 
   //     await waitForStatus((s) => !s?.session_is_open, 20000);
 
-  //     await callApi("open-session");
+  //     await callApi("sessionOpen");
   //   } catch (err) {
   //     console.error("Vend flow failed:", err);
 
   //     // optional recovery
-  //     await callApi("close-session");
-  //     await callApi("open-session");
+  //     await callApi("sessionClose");
+  //     await callApi("sessionOpen");
   //   }
   // }
 
@@ -346,7 +344,7 @@ function App() {
 
   async function handleProduct(index: number) {
     try {
-      await callApi("vend-request", {
+      await callApi("vendRequest", {
         price: coffeeList[index].price,
         itemNumber: index,
       });
@@ -358,16 +356,16 @@ function App() {
       // 3-second delay
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      await callApi("vend-success", { itemNumber: index });
-      await callApi("close-session");
+      await callApi("vendSuccess", { itemNumber: index });
+      await callApi("sessionClose");
 
       await waitForStatus((s) => !s?.session_is_open, 20000);
 
-      await callApi("open-session");
+      await callApi("sessionOpen");
     } catch (err) {
       console.error("Vend flow failed:", err);
-      await callApi("close-session");
-      await callApi("open-session");
+      await callApi("sessionClose");
+      await callApi("sessionOpen");
     }
   }
   useEffect(() => {

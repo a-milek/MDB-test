@@ -73,7 +73,7 @@ const Screen = ({ status, sugar, tech }: Props) => {
           height="100%" // fill Box height
         >
           {lines.map((line, i) => (
-            <Text key={i} color="white" fontSize="lg" flex="1">
+            <Text key={i} color="white" fontSize="2xl" flex="1">
               {line}
             </Text>
           ))}
