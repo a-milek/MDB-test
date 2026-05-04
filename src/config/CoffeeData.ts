@@ -3,13 +3,13 @@ const coffeeData = [
     id: 1,
     servId: "3",
     name: "Espresso (ziarnista)",
-    price: 2,
+    price: 0.5,
   },
   {
     id: 2,
     servId: "4",
     name: "Espresso",
-    price: 1.5,
+    price: 1,
   },
   {
     id: 3,
@@ -23,9 +23,9 @@ const coffeeData = [
     name: "Kawa duża (ziarnista)",
     price: 2,
   },
-  { id: 5, servId: "7", name: "Kawa duża", price: 1.5 },
-  { id: 6, servId: "8", name: "Kawa duża z Mlekiem (ziarnista)", price: 2 },
-  { id: 7, servId: "9", name: "Kawa duża z Mlekiem (ziarnista)", price: 2 },
+  { id: 5, servId: "7", name: "Kawa duża", price: 5 },
+  { id: 6, servId: "8", name: "Kawa duża z Mlekiem (ziarnista)", price: 10 },
+  { id: 7, servId: "9", name: "Kawa duża z Mlekiem (ziarnista)", price: 1.80 },
   { id: 8, servId: "10", name: "Cappucino z czekoladą (ziarnista) ", price: 2 },
   { id: 9, servId: "11", name: "Cappucino z czekoladą", price: 1.5 },
   {
@@ -46,8 +46,5 @@ const coffeeData = [
   { id: 15, servId: "17", name: "PUSTE", price: 2 },
   { id: 16, servId: "18", name: "PUSTE", price: 2 },
 
-  // { id: 13, servId: "16", name: "Herbata owocowa instant", price: 3 },
-  // { id: 14, servId: "17", name: "Barszcz czerwony", price: 3 },
-  // { id: 15, servId: "18", name: "Pusty kubek", price: 1 },
 ];
 export default coffeeData;

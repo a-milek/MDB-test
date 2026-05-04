@@ -4,7 +4,7 @@ import CoffeeGrid from "./components/CoffeeGrid";
 // import Screen from "./components/Screen";
 import Status from "./components/Status";
 import OutOfOrderModal from "./components/OutOfOrderModal";
-import { useIdleTimer } from "react-idle-timer";
+// import { useIdleTimer } from "react-idle-timer";
 // import TimeoutScreen from "./components/TimeoutScreen";
 import { IntlProvider } from "react-intl";
 import LanguageSwitcher from "./components/LanguageSwitcher";
@@ -19,19 +19,16 @@ import TechKeyboard from "./components/TechKeyboard";
 export interface MdbStatus {
   is_error_state: boolean;
   is_service_state: boolean;
-  is_unsuficient_change_state: boolean;
+  is_insufficient_change: boolean;
   is_cash_only: boolean;
   is_card_only: boolean;
   is_notes_not_accepted: boolean;
   session_is_open: boolean;
   session_is_requested_to_cancel: boolean;
-  session_vend_aproved: boolean;
-  credit_requested: number;
-  cash_credit: number;
-  cashless_credit: number;
-  max_allowed_credit: number;
+  vend_approved: boolean;
+  item_price: number;
+  funds_available: number;
 }
-
 function App() {
   const autoResumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // --- UI & state control ---
@@ -42,7 +39,7 @@ function App() {
   const [progress, setProgress] = useState(1);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [hasCredit, setHasCredit] = useState(false);
+  const [, /*hasCredit*/ setHasCredit] = useState(false);
   const [sugar, setSugar] = useState(0);
 
   // --- Price & order control ---
@@ -96,37 +93,37 @@ function App() {
   }, [status]);
 
   //  --- Idle Timer ---
-  useIdleTimer({
-    timeout: 1000 * 120, // 2 minutes
-    debounce: 500,
-    onIdle: () => {
-      if (!hasCredit) {
-        console.log("User idle — showing timeout screen");
-        setIsTimedOut(true);
+  // useIdleTimer({
+  //   timeout: 1000 * 120, // 2 minutes
+  //   debounce: 500,
+  //   onIdle: () => {
+  //     if (!hasCredit) {
+  //       console.log("User idle — showing timeout screen");
+  //       setIsTimedOut(true);
 
-        // Start timer to auto-resume after 1 minute
-        if (autoResumeTimeout.current) {
-          clearTimeout(autoResumeTimeout.current);
-        }
-        autoResumeTimeout.current = setTimeout(() => {
-          console.log("Auto-resume triggered after 1 minute");
-          setIsTimedOut(false);
-        }, 1000 * 60); // 1 minute
-      } else {
-        console.log("Idle ignored — 'Kredyt' is active");
-      }
-    },
-    onActive: () => {
-      console.log("User became active — hiding timeout screen");
-      setIsTimedOut(false);
+  //       // Start timer to auto-resume after 1 minute
+  //       if (autoResumeTimeout.current) {
+  //         clearTimeout(autoResumeTimeout.current);
+  //       }
+  //       autoResumeTimeout.current = setTimeout(() => {
+  //         console.log("Auto-resume triggered after 1 minute");
+  //         setIsTimedOut(false);
+  //       }, 1000 * 60); // 1 minute
+  //     } else {
+  //       console.log("Idle ignored — 'Kredyt' is active");
+  //     }
+  //   },
+  //   onActive: () => {
+  //     console.log("User became active — hiding timeout screen");
+  //     setIsTimedOut(false);
 
-      // Cancel auto-resume timer if user became active
-      if (autoResumeTimeout.current) {
-        clearTimeout(autoResumeTimeout.current);
-        autoResumeTimeout.current = null;
-      }
-    },
-  });
+  //     // Cancel auto-resume timer if user became active
+  //     if (autoResumeTimeout.current) {
+  //       clearTimeout(autoResumeTimeout.current);
+  //       autoResumeTimeout.current = null;
+  //     }
+  //   },
+  // });
 
   useEffect(() => {
     if (status?.is_error_state) {
@@ -349,9 +346,9 @@ function App() {
         itemNumber: index,
       });
 
-      // Wait until vend is approved
-      await waitForStatus((s) => s?.session_vend_aproved);
-      await click_button(coffeeList[index].servId);
+      // Wait until vend is approved (up to 2 min for customer to insert payment)
+      await waitForStatus((s) => s?.vend_approved, 120000);
+      // await click_button(coffeeList[index].servId);
 
       // 3-second delay
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -359,7 +356,7 @@ function App() {
       await callApi("vendSuccess", { itemNumber: index });
       await callApi("sessionClose");
 
-      await waitForStatus((s) => !s?.session_is_open, 20000);
+      await waitForStatus((s) => !s?.session_is_open, 120000);
 
       await callApi("sessionOpen");
     } catch (err) {

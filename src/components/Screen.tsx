@@ -10,34 +10,32 @@ interface Props {
 
 const Screen = ({ status, sugar, tech }: Props) => {
   const intl = useIntl();
-  const totalCredit =
-    (status?.cash_credit ?? 0) + (status?.cashless_credit ?? 0);
 
   const lines = status
     ? [
-        status.session_vend_aproved
+        status.vend_approved
           ? intl.formatMessage({ id: "drink_preparing" })
           : status.session_is_open
-            ? status.credit_requested > 0
+            ? (status.item_price ?? 0) > 0
               ? intl.formatMessage({ id: "picked_drink" })
               : intl.formatMessage({ id: "session_open" })
             : intl.formatMessage({ id: "session_closed" }),
 
-        totalCredit > 0
+        (status.funds_available ?? 0) > 0
           ? intl.formatMessage(
               { id: "credit" },
-              { amount: totalCredit.toFixed(2) },
+              { amount: (status.funds_available ?? 0).toFixed(2) },
             )
           : null,
 
-        status.credit_requested > 0
+        status.item_price > 0
           ? intl.formatMessage(
               { id: "price" },
-              { price: status.credit_requested.toFixed(2) },
+              { price: status.item_price.toFixed(2) },
             )
           : null,
 
-        status.is_unsuficient_change_state
+        status.is_insufficient_change
           ? intl.formatMessage({ id: "unsuficient_change" })
           : null,
 
