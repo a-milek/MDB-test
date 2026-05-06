@@ -10,7 +10,7 @@ import {
   Box,
   Image,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface Props {
   isOpen: boolean;
@@ -19,20 +19,20 @@ interface Props {
 }
 
 // Dynamiczne importowanie ikon z folderu /src/assets/icons (Vite)
-const icons = import.meta.glob("/src/assets/icons/*.{png,jpg,jpeg,svg}", {
-  eager: true,
-  import: "default",
-});
-const iconSrcs = Object.entries(icons).map(([path, mod]: any) => {
-  return mod.default || path.replace("/src/assets/", "assets/");
-});
+const icons = import.meta.glob<string>(
+  "/src/assets/icons/*.{png,jpg,jpeg,svg}",
+  { eager: true, import: "default" },
+);
+const iconSrcs = Object.values(icons);
 
 const PhotoEditModal = ({ isOpen, onClose, onSave }: Props) => {
   const [inputValue, setInputValue] = useState("");
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  useEffect(() => {
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) setInputValue("");
-  }, [isOpen]);
+  }
 
   const handleSave = () => {
     if (inputValue.trim()) {

@@ -43,7 +43,7 @@ const TechKeyboard = ({ onClick, getCurrentPrice }: NumPadProps) => {
     let coffeePrices;
     try {
       coffeePrices = JSON.parse(stored) as { price: number }[];
-    } catch (e) {
+    } catch {
       setStatus("Błąd odczytu cen z localStorage");
       return;
     }

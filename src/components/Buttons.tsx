@@ -3,7 +3,10 @@ import { HStack, Button } from "@chakra-ui/react";
 import { useIntl } from "react-intl";
 
 interface ButtonsProps {
-  callApi: (endpoint: string, body?: any) => Promise<any>;
+  callApi: (
+    endpoint: string,
+    body?: Record<string, string | number | boolean>,
+  ) => Promise<unknown>;
 }
 
 const Buttons = ({ callApi }: ButtonsProps) => {

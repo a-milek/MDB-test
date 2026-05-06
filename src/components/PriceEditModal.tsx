@@ -9,7 +9,7 @@ import {
   Input,
   SimpleGrid,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface Props {
   isOpen: boolean;
@@ -17,12 +17,39 @@ interface Props {
   onSave: (newPrice: number) => void;
 }
 
+const NUMPAD_BUTTONS = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  ",",
+  "0",
+  "←",
+];
+
+const Numpad = ({ onPress }: { onPress: (value: string) => void }) => (
+  <SimpleGrid columns={3} spacing={2}>
+    {NUMPAD_BUTTONS.map((b) => (
+      <Button key={b} onClick={() => onPress(b)}>
+        {b}
+      </Button>
+    ))}
+  </SimpleGrid>
+);
+
 const PriceEditModal = ({ isOpen, onClose, onSave }: Props) => {
   const [inputValue, setInputValue] = useState<string>("");
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  useEffect(() => {
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) setInputValue("");
-  }, [isOpen]);
+  }
 
   const handleNumpadClick = (value: string) => {
     if (value === "C") {
@@ -42,32 +69,6 @@ const PriceEditModal = ({ isOpen, onClose, onSave }: Props) => {
     onClose();
   };
 
-  const Numpad = () => {
-    const buttons = [
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      ",",
-      "0",
-      "←",
-    ];
-    return (
-      <SimpleGrid columns={3} spacing={2}>
-        {buttons.map((b) => (
-          <Button key={b} onClick={() => handleNumpadClick(b)}>
-            {b}
-          </Button>
-        ))}
-      </SimpleGrid>
-    );
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="xs">
       <ModalOverlay />
@@ -81,7 +82,7 @@ const PriceEditModal = ({ isOpen, onClose, onSave }: Props) => {
             textAlign="right"
             fontSize="2xl"
           />
-          <Numpad />
+          <Numpad onPress={handleNumpadClick} />
         </ModalBody>
         <ModalFooter>
           <Button onClick={onClose} mr={3}>

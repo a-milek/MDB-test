@@ -9,8 +9,7 @@ import {
   Input,
   SimpleGrid,
 } from "@chakra-ui/react";
-import { useRef } from "react";
-import { useState, useEffect } from "react";
+import { useRef, useState } from "react";
 
 interface Props {
   isOpen: boolean;
@@ -18,13 +17,45 @@ interface Props {
   onSave: (inputValue: string) => void;
 }
 
+const NUMPAD_BUTTONS = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  ",",
+  "0",
+  "←",
+];
+
+const Numpad = ({ onPress }: { onPress: (value: string) => void }) => (
+  <SimpleGrid columns={3} spacing={2}>
+    {NUMPAD_BUTTONS.map((b) => (
+      <Button
+        key={b}
+        onClick={() => onPress(b)}
+        _focus={{ boxShadow: "none" }}
+        _active={{ bg: "blue.100" }}
+      >
+        {b}
+      </Button>
+    ))}
+  </SimpleGrid>
+);
+
 const IndexEditModal = ({ isOpen, onClose, onSave }: Props) => {
   const [inputValue, setInputValue] = useState<string>("");
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   const initialRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) setInputValue("");
-  }, [isOpen]);
+  }
 
   const handleNumpadClick = (value: string) => {
     if (document.activeElement instanceof HTMLElement) {
@@ -38,37 +69,6 @@ const IndexEditModal = ({ isOpen, onClose, onSave }: Props) => {
     } else {
       setInputValue((prev) => prev + value);
     }
-  };
-
-  const Numpad = () => {
-    const buttons = [
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      ",",
-      "0",
-      "←",
-    ];
-    return (
-      <SimpleGrid columns={3} spacing={2}>
-        {buttons.map((b) => (
-          <Button
-            key={b}
-            onClick={() => handleNumpadClick(b)}
-            _focus={{ boxShadow: "none" }}
-            _active={{ bg: "blue.100" }}
-          >
-            {b}
-          </Button>
-        ))}
-      </SimpleGrid>
-    );
   };
 
   return (
@@ -100,7 +100,7 @@ const IndexEditModal = ({ isOpen, onClose, onSave }: Props) => {
             textAlign="right"
             fontSize="2xl"
           />
-          <Numpad />
+          <Numpad onPress={handleNumpadClick} />
         </ModalBody>
         <ModalFooter>
           <Button onClick={onClose} mr={3}>

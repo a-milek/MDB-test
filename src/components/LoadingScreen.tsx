@@ -8,14 +8,17 @@ interface Props {
 
 export default function LoadingScreen({ ready }: Props) {
   const [showReady, setShowReady] = useState(false);
+  const [prevReady, setPrevReady] = useState(ready);
+
+  if (prevReady !== ready) {
+    setPrevReady(ready);
+    if (!ready) setShowReady(false);
+  }
 
   useEffect(() => {
-    if (ready) {
-      const timeout = setTimeout(() => setShowReady(true), 500);
-      return () => clearTimeout(timeout);
-    } else {
-      setShowReady(false);
-    }
+    if (!ready) return;
+    const timeout = setTimeout(() => setShowReady(true), 500);
+    return () => clearTimeout(timeout);
   }, [ready]);
 
   return (

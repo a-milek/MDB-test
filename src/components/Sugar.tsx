@@ -1,8 +1,16 @@
 import { AspectRatio, Box, Flex, HStack, Image } from "@chakra-ui/react";
 // import ScreenInterpreter from "./ScreenInterpreter";
+import type { CSSProperties } from "react";
 import key_config from "../config/KeyConfig";
 import Screen from "./Screen";
 import type { MdbStatus } from "../App";
+
+const noDragStyle = {
+  touchAction: "none",
+  userSelect: "none",
+  WebkitUserDrag: "none",
+  WebkitTouchCallout: "none",
+} as CSSProperties;
 
 interface Props {
   onClick: (index: number) => void;
@@ -31,14 +39,7 @@ const SugarPanel = ({
       <HStack gap={5} py={2} width="80%" mx="auto" paddingTop="40px">
         <Box
           width="33%"
-          style={
-            {
-              touchAction: "none",
-              userSelect: "none",
-              WebkitUserDrag: "none",
-              WebkitTouchCallout: "none",
-            } as any
-          }
+          style={noDragStyle}
         >
           <Image
             src="assets/less_sugar.png"
@@ -56,14 +57,7 @@ const SugarPanel = ({
           align="center"
           width={"33%"}
           height="100%"
-          style={
-            {
-              touchAction: "none",
-              userSelect: "none",
-              WebkitUserDrag: "none",
-              WebkitTouchCallout: "none",
-            } as any
-          }
+          style={noDragStyle}
         >
           <Box width="100%" height="100%">
             {" "}
@@ -88,14 +82,7 @@ const SugarPanel = ({
 
         <Box
           width="33%"
-          style={
-            {
-              touchAction: "none",
-              userSelect: "none",
-              WebkitUserDrag: "none",
-              WebkitTouchCallout: "none",
-            } as any
-          }
+          style={noDragStyle}
         >
           <Image
             src="assets/more_sugar.png"

@@ -10,7 +10,7 @@ import {
   SimpleGrid,
   Box,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface Props {
   isOpen: boolean;
@@ -21,10 +21,12 @@ interface Props {
 const NameEditModal = ({ isOpen, onClose, onSave }: Props) => {
   const [inputValue, setInputValue] = useState<string>("");
   const [capsLock, setCapsLock] = useState(false);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  useEffect(() => {
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) setInputValue("");
-  }, [isOpen]);
+  }
 
   const polishUpperMap: Record<string, string> = {
     ą: "Ą",

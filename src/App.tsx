@@ -234,7 +234,10 @@ function App() {
       ws?.close();
     };
   }, []);
-  const callApi = async (endpoint: string, params?: Record<string, any>) => {
+  const callApi = async (
+    endpoint: string,
+    params?: Record<string, string | number | boolean>,
+  ) => {
     console.log(endpoint);
     try {
       let url = `${import.meta.env.VITE_API_URL}/${endpoint}`;
@@ -358,7 +361,7 @@ function App() {
       });
 
       // Wait until vend is approved (up to 2 min for customer to insert payment)
-      await waitForStatus((s) => s?.vend_approved, 120000);
+      await waitForStatus((s) => !!s?.vend_approved, 120000);
       // await click_button(coffeeList[index].servId);
 
       // 3-second delay
@@ -391,7 +394,10 @@ function App() {
     }
   };
 
-  function waitForStatus(predicate: (status: any) => boolean, timeout = 10000) {
+  function waitForStatus(
+    predicate: (status: MdbStatus | null) => boolean,
+    timeout = 10000,
+  ) {
     return new Promise<void>((resolve, reject) => {
       const start = Date.now();
 

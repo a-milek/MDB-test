@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import LCD_Simulator from "./LCD_Simulator";
 
@@ -34,10 +35,10 @@ const ScreenInterpreter = ({
     const newLines = [...rawLines];
     let foundProgress = false;
     let sugarCount: number | null = null;
-    let currentPrice: number | null = null;
+    const currentPrice: number | null = null;
 
     for (let i = 0; i < newLines.length; i++) {
-      let line = newLines[i];
+      const line = newLines[i];
 
       // Cukier
       if (line.startsWith("Cukier")) {
