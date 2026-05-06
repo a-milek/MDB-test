@@ -2,19 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, useDisclosure, VisuallyHidden } from "@chakra-ui/react";
 import CoffeeGrid from "./components/CoffeeGrid";
 // import Screen from "./components/Screen";
-import Status from "./components/Status";
 import OutOfOrderModal from "./components/OutOfOrderModal";
-// import { useIdleTimer } from "react-idle-timer";
+import { useIdleTimer } from "react-idle-timer";
 // import TimeoutScreen from "./components/TimeoutScreen";
 import { IntlProvider } from "react-intl";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import pl from "./locales/pl.json";
 import en from "./locales/en.json";
-import Buttons from "./components/Buttons";
 import coffeeData from "./config/CoffeeData";
 import LoadingScreen from "./components/LoadingScreen";
 import SugarPanel from "./components/Sugar";
 import TechKeyboard from "./components/TechKeyboard";
+import TimeoutScreen from "./components/TimeoutScreen";
 
 export interface MdbStatus {
   is_error_state: boolean;
@@ -32,14 +31,14 @@ export interface MdbStatus {
 function App() {
   const autoResumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // --- UI & state control ---
-  const [, /* isTimedOut */ setIsTimedOut] = useState(false);
+  const [isTimedOut, setIsTimedOut] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [lines, setLines] = useState<string[]>(["Oczekiwanie na dane"]);
   const [tech, setTech] = useState(false);
   const [progress, setProgress] = useState(1);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [, /*hasCredit*/ setHasCredit] = useState(false);
+  const [hasCredit, setHasCredit] = useState(false);
   const [sugar, setSugar] = useState(0);
 
   // --- Price & order control ---
@@ -84,7 +83,7 @@ function App() {
     POLISH: "pl" as const,
   };
   type Locale = (typeof LOCALES)[keyof typeof LOCALES];
-  const [locale, setLocale] = useState<Locale>(LOCALES.ENGLISH);
+  const [locale, setLocale] = useState<Locale>(LOCALES.POLISH);
 
   const statusRef = useRef(status);
 
@@ -93,37 +92,37 @@ function App() {
   }, [status]);
 
   //  --- Idle Timer ---
-  // useIdleTimer({
-  //   timeout: 1000 * 120, // 2 minutes
-  //   debounce: 500,
-  //   onIdle: () => {
-  //     if (!hasCredit) {
-  //       console.log("User idle — showing timeout screen");
-  //       setIsTimedOut(true);
+  useIdleTimer({
+    timeout: 1000 * 120, // 2 minutes
+    debounce: 500,
+    onIdle: () => {
+      if (!hasCredit) {
+        console.log("User idle — showing timeout screen");
+        setIsTimedOut(true);
 
-  //       // Start timer to auto-resume after 1 minute
-  //       if (autoResumeTimeout.current) {
-  //         clearTimeout(autoResumeTimeout.current);
-  //       }
-  //       autoResumeTimeout.current = setTimeout(() => {
-  //         console.log("Auto-resume triggered after 1 minute");
-  //         setIsTimedOut(false);
-  //       }, 1000 * 60); // 1 minute
-  //     } else {
-  //       console.log("Idle ignored — 'Kredyt' is active");
-  //     }
-  //   },
-  //   onActive: () => {
-  //     console.log("User became active — hiding timeout screen");
-  //     setIsTimedOut(false);
+        // Start timer to auto-resume after 1 minute
+        if (autoResumeTimeout.current) {
+          clearTimeout(autoResumeTimeout.current);
+        }
+        autoResumeTimeout.current = setTimeout(() => {
+          console.log("Auto-resume triggered after 1 minute");
+          setIsTimedOut(false);
+        }, 1000 * 60); // 1 minute
+      } else {
+        console.log("Idle ignored — 'Kredyt' is active");
+      }
+    },
+    onActive: () => {
+      console.log("User became active — hiding timeout screen");
+      setIsTimedOut(false);
 
-  //     // Cancel auto-resume timer if user became active
-  //     if (autoResumeTimeout.current) {
-  //       clearTimeout(autoResumeTimeout.current);
-  //       autoResumeTimeout.current = null;
-  //     }
-  //   },
-  // });
+      // Cancel auto-resume timer if user became active
+      if (autoResumeTimeout.current) {
+        clearTimeout(autoResumeTimeout.current);
+        autoResumeTimeout.current = null;
+      }
+    },
+  });
 
   useEffect(() => {
     if (status?.is_error_state) {
@@ -256,11 +255,23 @@ function App() {
       console.error(`${endpoint} ERROR:`, err);
     }
   };
+  const sessionBusy = useRef(false);
   useEffect(() => {
-    if (status?.session_is_requested_to_cancel) {
-      callApi("sessionClose");
-      callApi("sessionOpen");
-    }
+    if (!status || sessionBusy.current) return;
+    if (status.is_error_state || status.is_service_state) return;
+
+    const reopen = async (close: boolean) => {
+      sessionBusy.current = true;
+      try {
+        if (close) await callApi("sessionClose");
+        await callApi("sessionOpen");
+      } finally {
+        sessionBusy.current = false;
+      }
+    };
+
+    if (status.session_is_requested_to_cancel) reopen(true);
+    else if (!status.session_is_open) reopen(false);
   }, [status]);
   // async function handleProduct(index: number) {
   //   try {
@@ -352,6 +363,7 @@ function App() {
 
       // 3-second delay
       await new Promise((resolve) => setTimeout(resolve, 5000));
+      click_button(coffeeList[index].servId);
 
       await callApi("vendSuccess", { itemNumber: index });
       await callApi("sessionClose");
@@ -397,19 +409,19 @@ function App() {
     });
   }
 
-  // if (isTimedOut)
-  //   return (
-  //     <>
-  //       <TimeoutScreen />
-  //     </>
-  //   );
+  if (isTimedOut)
+    return (
+      <>
+        <TimeoutScreen />
+      </>
+    );
 
   return (
     <>
       <IntlProvider
         messages={messages[locale]}
         locale={locale}
-        defaultLocale={LOCALES.ENGLISH}
+        defaultLocale={LOCALES.POLISH}
       >
         <OutOfOrderModal isOpen={isOpen} onClose={onClose} />
         <Box
@@ -418,7 +430,7 @@ function App() {
               ? "#2596be"
               : status?.is_error_state || tech
                 ? "red"
-                : "white"
+                : "black"
           }
           minH="100vh"
           minW="100vw"
@@ -426,9 +438,10 @@ function App() {
         >
           {!wsConnected && <p>Reconnecting...</p>}
 
-          <Status status={status} />
+          {/* <Status status={status} /> */}
           <LanguageSwitcher locale={locale} onChange={setLocale} />
-          <Buttons callApi={callApi} />
+          {/*
+          <Buttons callApi={callApi} /> */}
           {/* <Box
           p={4}
           textAlign="center"

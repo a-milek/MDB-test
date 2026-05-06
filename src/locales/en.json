@@ -1,6 +1,6 @@
 {
   "session_open": "Select a drink",
-  "session_closed": "Session closed",
+  "session_closed": "Thank you for your purchase",
   "picked_drink": "Drink selected",
   "drink_preparing": "Preparing your drink",
   "credit": "Credit: {amount} zł",

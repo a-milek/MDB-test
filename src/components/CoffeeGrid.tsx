@@ -153,10 +153,8 @@ const CoffeeGrid = ({
               position="relative"
               width="100%"
               onClickCapture={() => handleCoffeeClick(index)}
-              borderWidth="3px"
-              borderColor={selectedIndex === index ? "white" : "black"}
               borderRadius="xl"
-              transition="border-color 0.3s ease"
+              overflow="hidden"
               cursor="none"
             >
               <Image
@@ -183,9 +181,21 @@ const CoffeeGrid = ({
                 justifyContent="center"
                 pointerEvents="none"
                 userSelect="none"
+                borderBottomRadius="lg"
               >
                 {coffee.price.toFixed(2).replace(".", ",")}zł
               </Text>
+
+              <Box
+                position="absolute"
+                inset={0}
+                borderWidth="3px"
+                borderColor={selectedIndex === index ? "white" : "black"}
+                borderRadius="xl"
+                transition="border-color 0.3s ease"
+                pointerEvents="none"
+                zIndex={1}
+              />
 
               <Text
                 position="absolute"
