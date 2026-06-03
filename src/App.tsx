@@ -267,7 +267,16 @@ function App() {
       sessionBusy.current = true;
       try {
         if (close) await callApi("sessionClose");
-        await callApi("sessionOpen");
+        // sessionOpen can 500 on cold boot before the payservice is ready — retry
+        for (let i = 0; i < 10; i++) {
+          await callApi("sessionOpen");
+          try {
+            await waitForStatus((s) => !!s?.session_is_open, 3000);
+            return;
+          } catch {
+            await new Promise((r) => setTimeout(r, 1000));
+          }
+        }
       } finally {
         sessionBusy.current = false;
       }
@@ -365,7 +374,7 @@ function App() {
       // await click_button(coffeeList[index].servId);
 
       // 3-second delay
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // await new Promise((resolve) => setTimeout(resolve, 5000));
       click_button(coffeeList[index].servId);
 
       await callApi("vendSuccess", { itemNumber: index });

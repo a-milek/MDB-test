@@ -28,19 +28,11 @@ interface Props {
   sugar: number;
 }
 
-const SugarPanel = ({
-  onClick,
-  tech,
-  status,
-  sugar,
-}: Props) => {
+const SugarPanel = ({ onClick, tech, status, sugar, lines = [] }: Props) => {
   return (
     <>
       <HStack gap={5} py={2} width="80%" mx="auto" paddingTop="40px">
-        <Box
-          width="33%"
-          style={noDragStyle}
-        >
+        <Box width="33%" style={noDragStyle}>
           <Image
             src="assets/less_sugar.png"
             width="100%"
@@ -63,7 +55,7 @@ const SugarPanel = ({
             {" "}
             <AspectRatio ratio={1} width="100%">
               {/* Make Screen fill Flex completely */}
-              <Screen status={status} sugar={sugar} tech={tech} />
+              <Screen status={status} sugar={sugar} tech={tech} lines={lines} />
             </AspectRatio>
           </Box>
           {/* <ScreenInterpreter
@@ -80,10 +72,7 @@ const SugarPanel = ({
           /> */}
         </Flex>
 
-        <Box
-          width="33%"
-          style={noDragStyle}
-        >
+        <Box width="33%" style={noDragStyle}>
           <Image
             src="assets/more_sugar.png"
             width="100%"

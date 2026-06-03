@@ -6,12 +6,13 @@ interface Props {
   status: MdbStatus | null;
   sugar: number;
   tech: boolean;
+  lines: string[];
 }
 
-const Screen = ({ status, sugar, tech }: Props) => {
+const Screen = ({ status, sugar, tech, lines }: Props) => {
   const intl = useIntl();
 
-  const lines = status
+  const friendlyLines = status
     ? [
         status.vend_approved
           ? intl.formatMessage({ id: "drink_preparing" })
@@ -52,41 +53,48 @@ const Screen = ({ status, sugar, tech }: Props) => {
   return (
     <Flex
       width="100%"
-      height="100%" // fill parent completely
+      height="100%"
       justifyContent="center"
       alignItems="center"
     >
       <Box
         width="100%"
-        height="100%" // fill Flex completely
+        height="100%"
         textAlign="center"
         userSelect="none"
         bg="black"
         borderRadius="md"
-        p={0} // remove padding
+        p={0}
       >
-        <VStack
-          gap={2}
-          py={5}
-          height="100%" // fill Box height
-        >
-          {lines.map((line, i) => (
-            <Text key={i} color="white" fontSize="2xl" flex="1">
-              {line}
-            </Text>
-          ))}
+        <VStack gap={2} py={5} height="100%">
+          {tech
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <Text
+                  key={i}
+                  color="white"
+                  fontSize="2xl"
+                  flex="1"
+                  fontFamily="mono"
+                  whiteSpace="pre"
+                >
+                  {lines[i] || " "}
+                </Text>
+              ))
+            : friendlyLines.map((line, i) => (
+                <Text key={i} color="white" fontSize="2xl" flex="1">
+                  {line}
+                </Text>
+              ))}
           {tech ? null : (
-            <HStack justify="center" align={"bottom"} pb={2}>
-              {sugar != 0
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <Box
-                      key={i}
-                      boxSize="30px" // ← tweak size here if needed
-                      bg={i < sugar ? "whiteAlpha.800" : "black"}
-                      borderRadius="sm"
-                    />
-                  ))
-                : " "}
+            <HStack justify="center" align="bottom" pb={2}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Box
+                  key={i}
+                  boxSize="30px"
+                  bg={i < sugar ? "whiteAlpha.800" : "whiteAlpha.200"}
+                  borderRadius="sm"
+                />
+              ))}
             </HStack>
           )}
         </VStack>
