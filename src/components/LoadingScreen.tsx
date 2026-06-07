@@ -2,22 +2,23 @@ import { useEffect, useState } from "react";
 import { Flex, Image, Box, Heading } from "@chakra-ui/react";
 
 interface Props {
-  progress: number;
   ready: boolean;
 }
 
 export default function LoadingScreen({ ready }: Props) {
   const [showReady, setShowReady] = useState(false);
-  const [prevReady, setPrevReady] = useState(ready);
 
-  if (prevReady !== ready) {
-    setPrevReady(ready);
-    if (!ready) setShowReady(false);
-  }
-
+  // reset when NOT ready
   useEffect(() => {
-    if (!ready) return;
-    const timeout = setTimeout(() => setShowReady(true), 500);
+    if (!ready) {
+      setShowReady(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setShowReady(true);
+    }, 500);
+
     return () => clearTimeout(timeout);
   }, [ready]);
 
@@ -49,33 +50,18 @@ export default function LoadingScreen({ ready }: Props) {
         textAlign="center"
         height="20%"
       >
-        {
-          showReady ? (
-            <Box height="5vh">
-              <Heading
-                color="white"
-                fontSize={"50px"}
-                fontWeight="bold"
-                background="blackAlpha.800"
-              >
-                ODBIERZ PRODUKT
-              </Heading>
-            </Box>
-          ) : null
-          // <Progress
-          //   value={progress}
-          //   size="lg"
-          //   height="5vh"
-          //   variant="outline"
-          //   sx={{
-          //     borderColor: "white",
-          //     background: "black",
-          //     "& > div": {
-          //       backgroundColor: "white",
-          //     },
-          //   }}
-          // />
-        }
+        {showReady ? (
+          <Box height="5vh">
+            <Heading
+              color="white"
+              fontSize="50px"
+              fontWeight="bold"
+              background="blackAlpha.800"
+            >
+              ODBIERZ PRODUKT
+            </Heading>
+          </Box>
+        ) : null}
       </Box>
     </Flex>
   );

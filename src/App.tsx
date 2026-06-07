@@ -35,7 +35,8 @@ function App() {
   const [wsConnected, setWsConnected] = useState(false);
   const [lines, setLines] = useState<string[]>(["Oczekiwanie na dane"]);
   const [tech, setTech] = useState(false);
-  const [progress, setProgress] = useState(1);
+  const [outOfOrder, setOutOfOrder] = useState(false);
+  
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasCredit, setHasCredit] = useState(false);
@@ -49,6 +50,10 @@ function App() {
     currentPriceRef.current = current;
   }, [current]);
   const lastProductRef = useRef<string | number | null>(null);
+
+
+   console.log("RENDER STATE:", { tech, ready, loading });
+   
 
   // --- Coffee List ---
   const [coffeeList, setCoffeeList] = useState(() => {
@@ -149,6 +154,7 @@ function App() {
             payload.type === "status_changed"
           ) {
             setStatus(payload.data);
+            
           }
         } catch (err) {
           console.error("WebSocket parse error:", err);
@@ -204,21 +210,16 @@ function App() {
         try {
           const payload = JSON.parse(event.data);
 
-          if (payload.type === "interpreted") {
-            const data = payload.data;
+          if (payload.type === "interpreted_state") {
+            const data = payload.state;
 
-            setLines(data.lines || []);
-            setProgress(data.progress || 0);
-            setTech(data.tech || false);
-            setReady(data.ready || false);
-
-            setSugar(data.sugar);
-
-            if (data.progress > 0 && !data.ready) {
-              setLoading(true);
-            } else if (data.ready) {
-              setLoading(false);
-            }
+            setOutOfOrder(data.out_of_order);
+            setTech(!!data.tech);
+            setReady(!!data.ready);
+            setSugar(data.sugar ?? 0);
+            setLines(data.remaining_lines ?? []);
+            setLoading(data.loading);
+            setCurrentPrice(data.current_price ?? null);
           }
         } catch (err) {
           console.error("WS parse error:", err);
@@ -431,30 +432,31 @@ function App() {
       </>
     );
 
-  return (
+ return (
     <>
-      <IntlProvider
-        messages={messages[locale]}
-        locale={locale}
-        defaultLocale={LOCALES.POLISH}
-      >
-        <OutOfOrderModal isOpen={isOpen} onClose={onClose} />
-        <Box
-          background={
-            status?.is_service_state
-              ? "#2596be"
-              : status?.is_error_state || tech
-                ? "red"
-                : "black"
-          }
-          minH="100vh"
-          minW="100vw"
-          alignContent="center"
-        >
-          {!wsConnected && <p>Reconnecting...</p>}
+  <IntlProvider
+    messages={messages[locale]}
+    locale={locale}
+    defaultLocale={LOCALES.POLISH}
+  >
+    <OutOfOrderModal isOpen={isOpen} onClose={onClose} />
+
+    <Box
+      background={
+        status?.is_service_state
+          ? "#2596be"
+          : status?.is_error_state || tech
+            ? "red"
+            : "black"
+      }
+      minH="100vh"
+      minW="100vw"
+      alignContent="center"
+    >
+      {!wsConnected && <p>Reconnecting...</p>}
 
           {/* <Status status={status} /> */}
-          <LanguageSwitcher locale={locale} onChange={setLocale} />
+      <LanguageSwitcher locale={locale} onChange={setLocale} />
           {/*
           <Buttons callApi={callApi} /> */}
           {/* <Box
@@ -474,7 +476,7 @@ function App() {
 
           {loading || ready ? (
             <>
-              <LoadingScreen progress={progress} ready={ready} />
+              <LoadingScreen ready={ready} />
               <VisuallyHidden>
                 <SugarPanel
                   tech={tech}
@@ -482,7 +484,7 @@ function App() {
                   onClick={click_button}
                   lines={lines}
                   setTech={setTech}
-                  setProgress={setProgress}
+                  // setProgress={setProgress}
                   setReady={setReady}
                   setCurrentPrice={setCurrentPrice}
                   setLoading={setLoading}
@@ -494,12 +496,13 @@ function App() {
               </VisuallyHidden>
             </>
           ) : (
-            <>
-              <SugarPanel
-                onClick={click_button}
+        <>
+        <SugarPanel
+          onClick={click_button}
                 lines={lines}
                 setTech={setTech}
-                setProgress={setProgress}
+                outOfOrder={outOfOrder}
+                // setProgress={setProgress}
                 setReady={setReady}
                 setCurrentPrice={setCurrentPrice}
                 setLoading={setLoading}
@@ -511,20 +514,20 @@ function App() {
                 sugar={sugar}
               />
               {tech && (
-                <TechKeyboard
-                  onClick={click_button}
-                  getCurrentPrice={getCurrentPrice}
-                />
+        <TechKeyboard
+          onClick={click_button}
+          getCurrentPrice={getCurrentPrice}
+        />
               )}
 
-              <CoffeeGrid
-                coffeeList={coffeeList}
-                setCoffeeList={setCoffeeList}
-                onClick={handleProduct}
-                tech={tech}
-                disabled={!tech && current !== null}
-              />
-            </>
+        <CoffeeGrid
+            coffeeList={coffeeList}
+            setCoffeeList={setCoffeeList}
+            onClick={handleProduct}
+            tech={tech}
+            disabled={!tech && current !== null}
+          />
+</>
           )}
 
           {/* <CoffeeGrid
@@ -534,8 +537,9 @@ function App() {
             tech={tech}
             disabled={!tech && current !== null}
           /> */}
-        </Box>
-      </IntlProvider>
+    </Box>
+   
+  </IntlProvider>
     </>
   );
 }

@@ -7,9 +7,10 @@ interface Props {
   sugar: number;
   tech: boolean;
   lines: string[];
+  outOfOrder?: boolean;
 }
 
-const Screen = ({ status, sugar, tech, lines }: Props) => {
+const Screen = ({ status, sugar, tech, lines, outOfOrder  }: Props) => {
   const intl = useIntl();
 
   const friendlyLines = status
@@ -67,7 +68,7 @@ const Screen = ({ status, sugar, tech, lines }: Props) => {
         p={0}
       >
         <VStack gap={2} py={5} height="100%">
-          {tech
+          {tech||outOfOrder
             ? Array.from({ length: 4 }).map((_, i) => (
                 <Text
                   key={i}
