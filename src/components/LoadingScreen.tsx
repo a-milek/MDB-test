@@ -8,12 +8,17 @@ interface Props {
 export default function LoadingScreen({ ready }: Props) {
   const [showReady, setShowReady] = useState(false);
 
-  // reset when NOT ready
+  // Reset immediately when the machine is no longer ready (done during render
+  // rather than in an effect to avoid a cascading re-render)
+  const [prevReady, setPrevReady] = useState(ready);
+  if (ready !== prevReady) {
+    setPrevReady(ready);
+    if (!ready) setShowReady(false);
+  }
+
+  // Show the "collect product" prompt 500ms after becoming ready
   useEffect(() => {
-    if (!ready) {
-      setShowReady(false);
-      return;
-    }
+    if (!ready) return;
 
     const timeout = setTimeout(() => {
       setShowReady(true);

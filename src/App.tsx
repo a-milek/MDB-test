@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, useDisclosure, VisuallyHidden } from "@chakra-ui/react";
 import CoffeeGrid from "./components/CoffeeGrid";
-// import Screen from "./components/Screen";
 import OutOfOrderModal from "./components/OutOfOrderModal";
-import { useIdleTimer } from "react-idle-timer";
-// import TimeoutScreen from "./components/TimeoutScreen";
 import { IntlProvider } from "react-intl";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import pl from "./locales/pl.json";
@@ -14,6 +11,20 @@ import LoadingScreen from "./components/LoadingScreen";
 import SugarPanel from "./components/Sugar";
 import TechKeyboard from "./components/TechKeyboard";
 import TimeoutScreen from "./components/TimeoutScreen";
+import { useVendFlow } from "./hooks/useVendFlow";
+import { useReconnectingSocket } from "./hooks/useReconnectingSocket";
+import { useIdleScreen } from "./hooks/useIdleScreen";
+import { useMdbSession } from "./hooks/useMdbSession";
+
+interface InterpretedState {
+  out_of_order: boolean;
+  tech: boolean;
+  ready: boolean;
+  sugar: number;
+  remaining_lines: string[];
+  loading: boolean;
+  current_price: number | null;
+}
 
 export interface MdbStatus {
   is_error_state: boolean;
@@ -28,19 +39,32 @@ export interface MdbStatus {
   item_price: number;
   funds_available: number;
 }
+
+const messages = { pl, en };
+
+const LOCALES = {
+  ENGLISH: "en",
+  POLISH: "pl",
+} as const;
+
+type Locale = (typeof LOCALES)[keyof typeof LOCALES];
+
 function App() {
-  const autoResumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   // --- UI & state control ---
-  const [isTimedOut, setIsTimedOut] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [lines, setLines] = useState<string[]>(["Oczekiwanie na dane"]);
   const [tech, setTech] = useState(false);
   const [outOfOrder, setOutOfOrder] = useState(false);
-  
+
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasCredit, setHasCredit] = useState(false);
   const [sugar, setSugar] = useState(0);
+  const [status, setStatus] = useState<MdbStatus | null>(null);
+
+  // --- Idle timeout screen ---
+  const { isTimedOut, setIsTimedOut, clearAutoResumeTimer } =
+    useIdleScreen(hasCredit);
 
   // --- Price & order control ---
   const [current, setCurrentPrice] = useState<number | null>(null);
@@ -49,11 +73,6 @@ function App() {
   useEffect(() => {
     currentPriceRef.current = current;
   }, [current]);
-  const lastProductRef = useRef<string | number | null>(null);
-
-
-   console.log("RENDER STATE:", { tech, ready, loading });
-   
 
   // --- Coffee List ---
   const [coffeeList, setCoffeeList] = useState(() => {
@@ -75,58 +94,14 @@ function App() {
       .forEach((img) => img.setAttribute("draggable", "false"));
   }, []);
 
-  const [status, setStatus] = useState<MdbStatus | null>(null);
-
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // const [presence, setPresence] = useState<boolean>(false);
-  // const [distance, setDistance] = useState<number | null>(null);
-
-  const messages = { pl, en };
-  const LOCALES = {
-    ENGLISH: "en" as const,
-    POLISH: "pl" as const,
-  };
-  type Locale = (typeof LOCALES)[keyof typeof LOCALES];
   const [locale, setLocale] = useState<Locale>(LOCALES.POLISH);
 
-  const statusRef = useRef(status);
-
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
-
-  //  --- Idle Timer ---
-  useIdleTimer({
-    timeout: 1000 * 120, // 2 minutes
-    debounce: 500,
-    onIdle: () => {
-      if (!hasCredit) {
-        console.log("User idle — showing timeout screen");
-        setIsTimedOut(true);
-
-        // Start timer to auto-resume after 1 minute
-        if (autoResumeTimeout.current) {
-          clearTimeout(autoResumeTimeout.current);
-        }
-        autoResumeTimeout.current = setTimeout(() => {
-          console.log("Auto-resume triggered after 1 minute");
-          setIsTimedOut(false);
-        }, 1000 * 60); // 1 minute
-      } else {
-        console.log("Idle ignored — 'Kredyt' is active");
-      }
-    },
-    onActive: () => {
-      console.log("User became active — hiding timeout screen");
-      setIsTimedOut(false);
-
-      // Cancel auto-resume timer if user became active
-      if (autoResumeTimeout.current) {
-        clearTimeout(autoResumeTimeout.current);
-        autoResumeTimeout.current = null;
-      }
-    },
+  const { callApi, clickButton, waitForStatus, sessionBusy } = useMdbSession({
+    status,
+    setStatus,
+    ready,
   });
 
   useEffect(() => {
@@ -137,293 +112,65 @@ function App() {
     }
   }, [status, onOpen, onClose]);
 
-  useEffect(() => {
-    let ws: WebSocket | null = null;
-    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
-    let disposed = false;
-
-    function connect() {
-      if (disposed) return;
-      ws = new WebSocket(import.meta.env.VITE_MDB_WS_URL);
-
-      ws.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-          if (
-            payload.type === "status_snapshot" ||
-            payload.type === "status_changed"
-          ) {
-            setStatus(payload.data);
-            
-          }
-        } catch (err) {
-          console.error("WebSocket parse error:", err);
+  // MDB watch socket — drives the raw machine status
+  useReconnectingSocket<{ type: string; data: MdbStatus }>(
+    import.meta.env.VITE_MDB_WS_URL,
+    {
+      onOpen: () => console.log("Connected to MDB watch WS"),
+      onClose: () => console.log("Disconnected from MDB watch WS"),
+      onMessage: (payload) => {
+        if (
+          payload.type === "status_snapshot" ||
+          payload.type === "status_changed"
+        ) {
+          setStatus(payload.data);
         }
-      };
+      },
+    },
+  );
 
-      ws.onopen = () => console.log("Connected to MDB watch WS");
-      ws.onclose = () => {
-        console.log("Disconnected from MDB watch WS");
-        if (!disposed) {
-          retryTimeout = setTimeout(connect, 3000);
-        }
-      };
-      ws.onerror = (err) => console.error("WS error:", err);
-    }
-
-    connect();
-
-    return () => {
-      disposed = true;
-      if (retryTimeout) clearTimeout(retryTimeout);
-      ws?.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    let ws: WebSocket | null = null;
-    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
-    let disposed = false;
-
-    function connect() {
-      if (disposed) return;
-      ws = new WebSocket(import.meta.env.VITE_INTERPRETER_WS_URL);
-
-      ws.onopen = () => {
+  // Interpreter socket — drives the friendly UI state (sugar, lines, tech, etc.)
+  useReconnectingSocket<{ type: string; state: InterpretedState }>(
+    import.meta.env.VITE_INTERPRETER_WS_URL,
+    {
+      onOpen: () => {
         console.log("Connected to interpreter WS (9000)");
         setWsConnected(true);
-      };
-
-      ws.onclose = () => {
+      },
+      onClose: () => {
         console.log("Disconnected from interpreter WS");
         setWsConnected(false);
-        if (!disposed) {
-          retryTimeout = setTimeout(connect, 3000);
+      },
+      onMessage: (payload) => {
+        if (payload.type === "interpreted_state") {
+          const data = payload.state;
+          setOutOfOrder(data.out_of_order);
+          setTech(!!data.tech);
+          setReady(!!data.ready);
+          setSugar(data.sugar ?? 0);
+          setLines(data.remaining_lines ?? []);
+          setLoading(data.loading);
+          setCurrentPrice(data.current_price ?? null);
         }
-      };
-
-      ws.onerror = (err) => {
-        console.error("WS 9000 error:", err);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-
-          if (payload.type === "interpreted_state") {
-            const data = payload.state;
-
-            setOutOfOrder(data.out_of_order);
-            setTech(!!data.tech);
-            setReady(!!data.ready);
-            setSugar(data.sugar ?? 0);
-            setLines(data.remaining_lines ?? []);
-            setLoading(data.loading);
-            setCurrentPrice(data.current_price ?? null);
-          }
-        } catch (err) {
-          console.error("WS parse error:", err);
-        }
-      };
-    }
-
-    connect();
-
-    return () => {
-      disposed = true;
-      if (retryTimeout) clearTimeout(retryTimeout);
-      ws?.close();
-    };
-  }, []);
-  const callApi = async (
-    endpoint: string,
-    params?: Record<string, string | number | boolean>,
-  ) => {
-    console.log(endpoint);
-    try {
-      let url = `${import.meta.env.VITE_API_URL}/${endpoint}`;
-      if (params) {
-        const query = new URLSearchParams(
-          Object.entries(params).map(([k, v]) => [k, String(v)]),
-        ).toString();
-        url += `?${query}`;
-      }
-      const res = await fetch(url);
-      const text = await res.text();
-      const data = text ? JSON.parse(text) : {};
-      if (endpoint === "getStatus") {
-        setStatus(data.data);
-      }
-      return data.data;
-    } catch (err) {
-      console.error(`${endpoint} ERROR:`, err);
-    }
-  };
-  const sessionBusy = useRef(false);
-  useEffect(() => {
-    if (!status || sessionBusy.current) return;
-    if (status.is_error_state || status.is_service_state) return;
-
-    const reopen = async (close: boolean) => {
-      sessionBusy.current = true;
-      try {
-        if (close) await callApi("sessionClose");
-        // sessionOpen can 500 on cold boot before the payservice is ready — retry
-        for (let i = 0; i < 10; i++) {
-          await callApi("sessionOpen");
-          try {
-            await waitForStatus((s) => !!s?.session_is_open, 3000);
-            return;
-          } catch {
-            await new Promise((r) => setTimeout(r, 1000));
-          }
-        }
-      } finally {
-        sessionBusy.current = false;
-      }
-    };
-
-    if (status.session_is_requested_to_cancel) reopen(true);
-    else if (!status.session_is_open) reopen(false);
-  }, [status]);
-  // async function handleProduct(index: number) {
-  //   try {
-  //     await callApi("vendRequest", {
-  //       price: CoffeeData[index].price,
-  //       itemNumber: index,
-  //     });
-
-  //     await waitForStatus((s) => s?.session_vend_approved);
-
-  //     await new Promise((resolve) => setTimeout(resolve, 3000));
-
-  //     await callApi("vend-success", { itemNumber: index });
-  //     await callApi("sessionClose");
-
-  //     await waitForStatus((s) => !s?.session_is_open, 20000);
-
-  //     await callApi("sessionOpen");
-  //   } catch (err) {
-  //     console.error("Vend flow failed:", err);
-
-  //     // optional recovery
-  //     await callApi("sessionClose");
-  //     await callApi("sessionOpen");
-  //   }
-  // }
-
-  const click_button = async (servId: string | number) => {
-    console.log("order start", servId);
-    try {
-      const res = await fetch("/vending-machines/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ servId }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Order failed");
-      }
-
-      return await res.json();
-    } catch (err) {
-      console.error("Order error:", err);
-      return null;
-    }
-  };
-  const finishedRef = useRef(false);
-
-  useEffect(() => {
-    if (ready && lastProductRef.current != null && !finishedRef.current) {
-      finishedRef.current = true;
-      product_finished(lastProductRef.current);
-    }
-
-    if (!ready) {
-      finishedRef.current = false;
-    }
-  }, [ready]);
-  const product_finished = async (product_id: string | number | null) => {
-    if (product_id == null) return;
-
-    console.log("called product_finished", product_id);
-
-    try {
-      const res = await fetch("/vending-machines/statservice/order_complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id }),
-      });
-
-      if (!res.ok) throw new Error("Statservice failed");
-      return await res.json();
-    } catch (err) {
-      console.error("Statservice error:", err);
-    }
-  };
-
-  async function handleProduct(index: number) {
-    try {
-      await callApi("vendRequest", {
-        price: coffeeList[index].price,
-        itemNumber: index,
-      });
-
-      // Wait until vend is approved (up to 2 min for customer to insert payment)
-      await waitForStatus((s) => !!s?.vend_approved, 120000);
-      // await click_button(coffeeList[index].servId);
-
-      // 3-second delay
-      // await new Promise((resolve) => setTimeout(resolve, 5000));
-      click_button(coffeeList[index].servId);
-
-      await callApi("vendSuccess", { itemNumber: index });
-      await callApi("sessionClose");
-
-      await waitForStatus((s) => !s?.session_is_open, 120000);
-
-      await callApi("sessionOpen");
-    } catch (err) {
-      console.error("Vend flow failed:", err);
-      await callApi("sessionClose");
-      await callApi("sessionOpen");
-    }
-  }
-  useEffect(() => {
-    return () => {
-      if (autoResumeTimeout.current) {
-        clearTimeout(autoResumeTimeout.current);
-      }
-    };
-  }, []);
-  const clearAutoResumeTimer = () => {
-    if (autoResumeTimeout.current) {
-      clearTimeout(autoResumeTimeout.current);
-      autoResumeTimeout.current = null;
-    }
-  };
-
-  function waitForStatus(
-    predicate: (status: MdbStatus | null) => boolean,
-    timeout = 10000,
-  ) {
-    return new Promise<void>((resolve, reject) => {
-      const start = Date.now();
-
-      const interval = setInterval(() => {
-        const currentStatus = statusRef.current;
-
-        if (predicate(currentStatus)) {
-          clearInterval(interval);
-          resolve();
-        } else if (Date.now() - start > timeout) {
-          clearInterval(interval);
-          reject(new Error("Timeout"));
-        }
-      }, 200);
-    });
-  }
+      },
+    },
+  );
+  const {
+    activeVendIndex,
+    cancelling,
+    cancelCountdown,
+    handleProduct,
+    cancelOrder,
+  } = useVendFlow({
+    callApi,
+    clickButton,
+    waitForStatus,
+    sessionBusy,
+    tech,
+    coffeeList,
+    status,
+    sugar,
+  });
 
   if (isTimedOut)
     return (
@@ -432,47 +179,30 @@ function App() {
       </>
     );
 
- return (
+  return (
     <>
-  <IntlProvider
-    messages={messages[locale]}
-    locale={locale}
-    defaultLocale={LOCALES.POLISH}
-  >
-    <OutOfOrderModal isOpen={isOpen} onClose={onClose} />
+      <IntlProvider
+        messages={messages[locale]}
+        locale={locale}
+        defaultLocale={LOCALES.POLISH}
+      >
+        <OutOfOrderModal isOpen={isOpen} onClose={onClose} />
 
-    <Box
-      background={
-        status?.is_service_state
-          ? "#2596be"
-          : status?.is_error_state || tech
-            ? "red"
-            : "black"
-      }
-      minH="100vh"
-      minW="100vw"
-      alignContent="center"
-    >
-      {!wsConnected && <p>Reconnecting...</p>}
-
-          {/* <Status status={status} /> */}
-      <LanguageSwitcher locale={locale} onChange={setLocale} />
-          {/*
-          <Buttons callApi={callApi} /> */}
-          {/* <Box
-          p={4}
-          textAlign="center"
-          width="100vw"
-          bg={presence ? "green.400" : "gray.200"}
-          color={presence ? "white" : "black"}
-          borderRadius="md"
-          mb={4}
+        <Box
+          background={
+            status?.is_service_state
+              ? "#2596be"
+              : status?.is_error_state || tech
+                ? "red"
+                : "black"
+          }
+          minH="100vh"
+          minW="100vw"
+          alignContent="center"
         >
-          Presence: {presence ? "YES" : "NO"}
-          <br />
-          Distance: {distance !== null ? `${distance} cm` : "—"}
-        </Box>
-        <Status status={status}></Status> */}
+          {!wsConnected && <p>Reconnecting...</p>}
+
+          <LanguageSwitcher locale={locale} onChange={setLocale} />
 
           {loading || ready ? (
             <>
@@ -481,10 +211,9 @@ function App() {
                 <SugarPanel
                   tech={tech}
                   status={status}
-                  onClick={click_button}
+                  onClick={clickButton}
                   lines={lines}
                   setTech={setTech}
-                  // setProgress={setProgress}
                   setReady={setReady}
                   setCurrentPrice={setCurrentPrice}
                   setLoading={setLoading}
@@ -496,13 +225,12 @@ function App() {
               </VisuallyHidden>
             </>
           ) : (
-        <>
-        <SugarPanel
-          onClick={click_button}
+            <>
+              <SugarPanel
+                onClick={clickButton}
                 lines={lines}
                 setTech={setTech}
                 outOfOrder={outOfOrder}
-                // setProgress={setProgress}
                 setReady={setReady}
                 setCurrentPrice={setCurrentPrice}
                 setLoading={setLoading}
@@ -514,32 +242,28 @@ function App() {
                 sugar={sugar}
               />
               {tech && (
-        <TechKeyboard
-          onClick={click_button}
-          getCurrentPrice={getCurrentPrice}
-        />
+                <TechKeyboard
+                  onClick={clickButton}
+                  getCurrentPrice={getCurrentPrice}
+                />
               )}
 
-        <CoffeeGrid
-            coffeeList={coffeeList}
-            setCoffeeList={setCoffeeList}
-            onClick={handleProduct}
-            tech={tech}
-            disabled={!tech && current !== null}
-          />
-</>
+              <CoffeeGrid
+                coffeeList={coffeeList}
+                setCoffeeList={setCoffeeList}
+                onClick={handleProduct}
+                tech={tech}
+                disabled={!tech && current !== null}
+                activeIndex={activeVendIndex}
+                cancelOrder={cancelOrder}
+                cancelling={cancelling}
+                cancelCountdown={cancelCountdown}
+                hasFunds={(status?.funds_available ?? 0) > 0}
+              />
+            </>
           )}
-
-          {/* <CoffeeGrid
-            coffeeList={coffeeList}
-            setCoffeeList={setCoffeeList}
-            onClick={handleProduct}
-            tech={tech}
-            disabled={!tech && current !== null}
-          /> */}
-    </Box>
-   
-  </IntlProvider>
+        </Box>
+      </IntlProvider>
     </>
   );
 }

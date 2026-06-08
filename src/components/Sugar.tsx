@@ -29,7 +29,14 @@ interface Props {
   outOfOrder?: boolean;
 }
 
-const SugarPanel = ({ onClick, tech, status, sugar, lines, outOfOrder = false }: Props) => {
+const SugarPanel = ({
+  onClick,
+  tech,
+  status,
+  sugar,
+  lines,
+  outOfOrder = false,
+}: Props) => {
   return (
     <>
       <HStack gap={5} py={2} width="80%" mx="auto" paddingTop="40px">
@@ -56,7 +63,13 @@ const SugarPanel = ({ onClick, tech, status, sugar, lines, outOfOrder = false }:
             {" "}
             <AspectRatio ratio={1} width="100%">
               {/* Make Screen fill Flex completely */}
-              <Screen status={status} sugar={sugar} tech={tech} lines={lines ?? []} outOfOrder={outOfOrder} />
+              <Screen
+                status={status}
+                sugar={sugar}
+                tech={tech}
+                lines={lines ?? []}
+                outOfOrder={outOfOrder}
+              />
             </AspectRatio>
           </Box>
           {/* <ScreenInterpreter

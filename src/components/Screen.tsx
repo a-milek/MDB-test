@@ -10,7 +10,7 @@ interface Props {
   outOfOrder?: boolean;
 }
 
-const Screen = ({ status, sugar, tech, lines, outOfOrder  }: Props) => {
+const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
   const intl = useIntl();
 
   const friendlyLines = status
@@ -68,7 +68,7 @@ const Screen = ({ status, sugar, tech, lines, outOfOrder  }: Props) => {
         p={0}
       >
         <VStack gap={2} py={5} height="100%">
-          {tech||outOfOrder
+          {tech || outOfOrder
             ? Array.from({ length: 4 }).map((_, i) => (
                 <Text
                   key={i}
@@ -88,7 +88,7 @@ const Screen = ({ status, sugar, tech, lines, outOfOrder  }: Props) => {
               ))}
           {tech ? null : (
             <HStack justify="center" align="bottom" pb={2}>
-              {Array.from({ length: 3 }).map((_, i) => (
+              {Array.from({ length: 5 }).map((_, i) => (
                 <Box
                   key={i}
                   boxSize="30px"

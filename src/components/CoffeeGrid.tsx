@@ -12,6 +12,17 @@ import NameEditModal from "./NameEditModal";
 import PhotoEditModal from "./PhotoEditModal";
 import IndexEditModal from "./IndexEditModal";
 
+const ButtonStyle = {
+  fontSize: "3xl",
+  background: "red.500",
+  variant: "subtle",
+  fontWeight: "semibold",
+  color: "white",
+  width: "33%",
+  height: "100%",
+  userSelect: "none" as const,
+};
+
 interface CoffeeType {
   servId: string;
   price: number;
@@ -25,6 +36,13 @@ interface Props {
   coffeeList: CoffeeType[];
   setCoffeeList: React.Dispatch<React.SetStateAction<CoffeeType[]>>;
   disabled: boolean;
+  // Index of the coffee with an in-progress vend; highlighted, others blocked
+  activeIndex?: number | null;
+  cancelOrder?: () => void;
+  cancelling?: boolean;
+  cancelCountdown?: number | null;
+  // True when money is inserted (lets the user cancel before picking a coffee)
+  hasFunds?: boolean;
 }
 
 const CoffeeGrid = ({
@@ -33,6 +51,11 @@ const CoffeeGrid = ({
   coffeeList,
   setCoffeeList,
   disabled,
+  activeIndex = null,
+  cancelOrder,
+  cancelling = false,
+  cancelCountdown = null,
+  hasFunds = false,
 }: Props) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingNameIndex, setEditingNameIndex] = useState<number | null>(null);
@@ -117,6 +140,8 @@ const CoffeeGrid = ({
   };
 
   const handleCoffeeClick = (index: number) => {
+    // While a vend is in progress, only its own coffee is interactive
+    if (activeIndex !== null) return;
     if (!tech && disabled) return;
 
     setSelectedIndex(index); // visual highlight
@@ -137,6 +162,17 @@ const CoffeeGrid = ({
     return 1;
   };
 
+  // Drop the local click highlight once the vend ends (or is cancelled).
+  // Done during render (not in an effect) to avoid a cascading re-render.
+  const [prevActiveIndex, setPrevActiveIndex] = useState(activeIndex);
+  if (activeIndex !== prevActiveIndex) {
+    setPrevActiveIndex(activeIndex);
+    if (activeIndex === null) setSelectedIndex(null);
+  }
+
+  // The active vend (if any) takes precedence over a plain click highlight
+  const highlightIndex = activeIndex ?? selectedIndex;
+
   return (
     <>
       <SimpleGrid
@@ -156,6 +192,8 @@ const CoffeeGrid = ({
               borderRadius="xl"
               overflow="hidden"
               cursor="none"
+              opacity={activeIndex !== null && activeIndex !== index ? 0.4 : 1}
+              transition="opacity 0.3s ease"
             >
               <Image
                 src={coffee.image || "assets/icons/empty.png"}
@@ -190,7 +228,7 @@ const CoffeeGrid = ({
                 position="absolute"
                 inset={0}
                 borderWidth="3px"
-                borderColor={selectedIndex === index ? "white" : "black"}
+                borderColor={highlightIndex === index ? "white" : "black"}
                 borderRadius="xl"
                 transition="border-color 0.3s ease"
                 pointerEvents="none"
@@ -276,6 +314,22 @@ const CoffeeGrid = ({
           </Box>
         ))}
       </SimpleGrid>
+      {cancelOrder && (activeIndex !== null || hasFunds) && (
+        <Button
+          {...ButtonStyle}
+          width="80%"
+          height="auto"
+          mx="auto"
+          display="block"
+          onClick={cancelOrder}
+          isDisabled={cancelling}
+        >
+          Anuluj{" "}
+          {cancelCountdown !== null
+            ? ` (${cancelCountdown.toFixed(1).replace(".", ",")}s)`
+            : ""}
+        </Button>
+      )}
 
       <PriceEditModal
         isOpen={priceModal.isOpen}
