@@ -12,13 +12,23 @@ import NameEditModal from "./NameEditModal";
 import PhotoEditModal from "./PhotoEditModal";
 import IndexEditModal from "./IndexEditModal";
 
-const ButtonStyle = {
+const ButtonStyleCancel = {
   fontSize: "3xl",
   background: "red.500",
   variant: "subtle",
   fontWeight: "semibold",
   color: "white",
   width: "33%",
+  height: "100%",
+  userSelect: "none" as const,
+};
+const ButtonStyle = {
+  fontSize: "3xl",
+  background: "black",
+  variant: "subtle",
+  fontWeight: "semibold",
+  color: "white",
+  width: "100%",
   height: "100%",
   userSelect: "none" as const,
 };
@@ -176,11 +186,11 @@ const CoffeeGrid = ({
   return (
     <>
       <SimpleGrid
-        columns={4}
+        columns={3}
         gap={5}
         paddingY={5}
         height="100%"
-        width={tech ? "50%" : "80%"}
+        width={tech ? "80%" : "80%"}
         mx="auto"
       >
         {coffeeList.map((coffee, index) => (
@@ -276,37 +286,37 @@ const CoffeeGrid = ({
                 <Box mt={2}>
                   <Button
                     size="md"
-                    width="100%"
+                    {...ButtonStyle}
                     onClick={() => handleSetPriceClick(index)}
                   >
-                    Ustaw cenę
+                    Cena
                   </Button>
                 </Box>
                 <Box mt={2}>
                   <Button
                     size="md"
-                    width="100%"
+                    {...ButtonStyle}
                     onClick={() => handleSetNameClick(index)}
                   >
-                    Ustaw nazwę
+                    Nazwa
                   </Button>
                 </Box>
                 <Box mt={2}>
                   <Button
                     size="md"
-                    width="100%"
                     onClick={() => handleSetPicClick(index)}
+                    {...ButtonStyle}
                   >
-                    Ustaw obrazek
+                    Obrazek
                   </Button>
                 </Box>
                 <Box mt={2}>
                   <Button
                     size="md"
-                    width="100%"
                     onClick={() => handleSetIndexClick(index)}
+                    {...ButtonStyle}
                   >
-                    Ustaw indeks
+                    Indeks
                   </Button>
                 </Box>
               </>
@@ -316,7 +326,7 @@ const CoffeeGrid = ({
       </SimpleGrid>
       {cancelOrder && (activeIndex !== null || hasFunds) && (
         <Button
-          {...ButtonStyle}
+          {...ButtonStyleCancel}
           width="80%"
           height="auto"
           mx="auto"

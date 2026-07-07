@@ -67,14 +67,14 @@ const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
         borderRadius="md"
         p={0}
       >
-        <VStack gap={2} py={5} height="100%">
-          {tech || outOfOrder
+        <VStack gap={1} py={3} height="100%">
+          <VStack gap={3} flex="1" justify="center" w="100%">
+            {tech || outOfOrder
             ? Array.from({ length: 4 }).map((_, i) => (
                 <Text
                   key={i}
                   color="white"
                   fontSize="2xl"
-                  flex="1"
                   fontFamily="mono"
                   whiteSpace="pre"
                 >
@@ -82,10 +82,11 @@ const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
                 </Text>
               ))
             : friendlyLines.map((line, i) => (
-                <Text key={i} color="white" fontSize="2xl" flex="1">
+                <Text key={i} color="white" fontSize="2xl">
                   {line}
                 </Text>
               ))}
+          </VStack>
           {tech ? null : (
             <HStack justify="center" align="bottom" pb={2}>
               {Array.from({ length: 5 }).map((_, i) => (

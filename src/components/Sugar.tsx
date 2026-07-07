@@ -1,4 +1,4 @@
-import { AspectRatio, Box, Flex, HStack, Image } from "@chakra-ui/react";
+import { Box, HStack, Image } from "@chakra-ui/react";
 // import ScreenInterpreter from "./ScreenInterpreter";
 import type { CSSProperties } from "react";
 import key_config from "../config/KeyConfig";
@@ -22,7 +22,6 @@ interface Props {
   setIsTimedOut?: (value: boolean) => void;
   setLoading?: (value: boolean) => void;
   tech: boolean;
-  setHasCredit?: (value: boolean) => void;
   clearAutoResumeTimer?: () => void;
   status: MdbStatus | null;
   sugar: number;
@@ -39,8 +38,15 @@ const SugarPanel = ({
 }: Props) => {
   return (
     <>
-      <HStack gap={5} py={2} width="80%" mx="auto" paddingTop="40px">
-        <Box width="33%" style={noDragStyle}>
+      <HStack
+        gap={5}
+        py={2}
+        width="80%"
+        mx="auto"
+        paddingTop="40px"
+        align="stretch"
+      >
+        <Box width="25%" style={noDragStyle}>
           <Image
             src="assets/less_sugar.png"
             width="100%"
@@ -52,41 +58,19 @@ const SugarPanel = ({
           />
         </Box>
 
-        <Flex
-          justify="center"
-          align="center"
-          width={"33%"}
-          height="100%"
-          style={noDragStyle}
-        >
-          <Box width="100%" height="100%">
-            {" "}
-            <AspectRatio ratio={1} width="100%">
-              {/* Make Screen fill Flex completely */}
-              <Screen
-                status={status}
-                sugar={sugar}
-                tech={tech}
-                lines={lines ?? []}
-                outOfOrder={outOfOrder}
-              />
-            </AspectRatio>
-          </Box>
-          {/* <ScreenInterpreter
-            lines={lines}
-            setTech={setTech}
-            setProgress={setProgress}
-            setReady={setReady}
-            setCurrentPrice={setCurrentPrice}
-            setLoading={setLoading}
+        {/* Stretches to the row height set by the square +/- buttons, so the
+            screen ends up exactly as tall as them. */}
+        <Box width="50%" minW={0} style={noDragStyle}>
+          <Screen
+            status={status}
+            sugar={sugar}
             tech={tech}
-            setIsTimedOut={setIsTimedOut}
-            setHasCredit={setHasCredit}
-            clearAutoResumeTimer={clearAutoResumeTimer}
-          /> */}
-        </Flex>
+            lines={lines ?? []}
+            outOfOrder={outOfOrder}
+          />
+        </Box>
 
-        <Box width="33%" style={noDragStyle}>
+        <Box width="25%" style={noDragStyle}>
           <Image
             src="assets/more_sugar.png"
             width="100%"

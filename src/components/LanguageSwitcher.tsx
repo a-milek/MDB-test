@@ -21,7 +21,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   onChange,
 }) => {
   return (
-    <HStack position="fixed" top={4} right={4} zIndex={10}>
+    <HStack position="fixed" top={8} right={4} zIndex={10}>
       {(Object.keys(LOCALE_TO_COUNTRY) as Locale[]).map((loc) => {
         const country = LOCALE_TO_COUNTRY[loc];
         const Flag = Flags[country];

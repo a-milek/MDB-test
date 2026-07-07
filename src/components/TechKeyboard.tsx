@@ -33,6 +33,14 @@ const TechKeyboard = ({ onClick, getCurrentPrice }: NumPadProps) => {
 
   const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
+  // Drop the cached prices so the app re-seeds from CoffeeData.ts on reload.
+  // Without this, edits to the file are ignored once localStorage is populated.
+  // const clearPrices = () => {
+  //   localStorage.removeItem(LOCAL_STORAGE_KEY);
+  //   setStatus("Ceny wyczyszczone — przeładowanie...");
+  //   window.location.reload();
+  // };
+
   const priceLoad = async () => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!stored) {
@@ -129,15 +137,6 @@ const TechKeyboard = ({ onClick, getCurrentPrice }: NumPadProps) => {
             </Button>
           </GridItem>
         </SimpleGrid>
-        {/* <Text
-          color="white"
-          fontSize="md"
-          whiteSpace="pre-line"
-          minHeight="3em"
-          pt={2}
-        >
-          {status}
-        </Text> */}
       </VStack>
     </>
   );

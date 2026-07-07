@@ -20,7 +20,7 @@ interface InterpretedState {
   out_of_order: boolean;
   tech: boolean;
   ready: boolean;
-  sugar: number;
+  sugar: number | null;
   remaining_lines: string[];
   loading: boolean;
   current_price: number | null;
@@ -58,13 +58,17 @@ function App() {
 
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [hasCredit, setHasCredit] = useState(false);
   const [sugar, setSugar] = useState(0);
   const [status, setStatus] = useState<MdbStatus | null>(null);
 
   // --- Idle timeout screen ---
+  // Suppress the idle timeout whenever a customer is mid-transaction, so a
+  // paying customer isn't interrupted: either the machine is holding inserted
+  // funds (credit) or a price is being shown on screen.
+  const hasCredit = (status?.funds_available ?? 0) > 0;
+  const hasPrice = (status?.item_price ?? 0) > 0;
   const { isTimedOut, setIsTimedOut, clearAutoResumeTimer } =
-    useIdleScreen(hasCredit);
+    useIdleScreen(hasCredit || hasPrice);
 
   // --- Price & order control ---
   const [current, setCurrentPrice] = useState<number | null>(null);
@@ -147,7 +151,11 @@ function App() {
           setOutOfOrder(data.out_of_order);
           setTech(!!data.tech);
           setReady(!!data.ready);
-          setSugar(data.sugar ?? 0);
+          // The interpreter reports sugar per-frame and sends null on any frame
+          // that has no Woda/Cukier line (price, preparing, credit, progress…).
+          // It's stateless, so hold the last known level here instead of snapping
+          // the bars back to 0 every time the screen shows something else.
+          setSugar((prev) => data.sugar ?? prev);
           setLines(data.remaining_lines ?? []);
           setLoading(data.loading);
           setCurrentPrice(data.current_price ?? null);
@@ -161,6 +169,8 @@ function App() {
     cancelCountdown,
     handleProduct,
     cancelOrder,
+    adjustSugar,
+    effectiveSugar,
   } = useVendFlow({
     callApi,
     clickButton,
@@ -211,23 +221,22 @@ function App() {
                 <SugarPanel
                   tech={tech}
                   status={status}
-                  onClick={clickButton}
+                  onClick={adjustSugar}
                   lines={lines}
                   setTech={setTech}
                   setReady={setReady}
                   setCurrentPrice={setCurrentPrice}
                   setLoading={setLoading}
                   setIsTimedOut={setIsTimedOut}
-                  setHasCredit={setHasCredit}
                   clearAutoResumeTimer={clearAutoResumeTimer}
-                  sugar={sugar}
+                  sugar={effectiveSugar}
                 />
               </VisuallyHidden>
             </>
           ) : (
             <>
               <SugarPanel
-                onClick={clickButton}
+                onClick={adjustSugar}
                 lines={lines}
                 setTech={setTech}
                 outOfOrder={outOfOrder}
@@ -236,10 +245,9 @@ function App() {
                 setLoading={setLoading}
                 tech={tech}
                 setIsTimedOut={setIsTimedOut}
-                setHasCredit={setHasCredit}
                 clearAutoResumeTimer={clearAutoResumeTimer}
                 status={status}
-                sugar={sugar}
+                sugar={effectiveSugar}
               />
               {tech && (
                 <TechKeyboard
