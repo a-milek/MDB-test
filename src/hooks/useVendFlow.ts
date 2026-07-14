@@ -145,6 +145,7 @@ export function useVendFlow({
       if (err instanceof Error && err.message === "Cancelled") {
         // cancelOrder owns the session close/reopen; just release the lock
         console.log("Vend cancelled by user");
+        
       } else {
         console.error("Vend flow failed:", err);
         await callApi("sessionClose");
@@ -153,6 +154,8 @@ export function useVendFlow({
     } finally {
       vendApprovedRef.current = false;
       setActiveVendIndex(null);
+      setCancelCountdown(null); // stop the idle countdown if it was running
+  
     }
   }
 

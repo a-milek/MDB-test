@@ -1,8 +1,8 @@
 const key_config = {
   plus: 1,
   minus: 0,
-  esc: 12,
-  enter: 11,
+  esc: 11,
+  enter: 10,
   // zbożowa: 11, //specific for astro
   // cukier: 2, //specific for astro
 };

@@ -186,7 +186,7 @@ const CoffeeGrid = ({
   return (
     <>
       <SimpleGrid
-        columns={3}
+        columns={tech ? 5: 3}
         gap={5}
         paddingY={5}
         height="100%"
