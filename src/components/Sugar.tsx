@@ -26,6 +26,7 @@ interface Props {
   status: MdbStatus | null;
   sugar: number;
   outOfOrder?: boolean;
+  unrecognized?: boolean;
 }
 
 const SugarPanel = ({
@@ -35,6 +36,7 @@ const SugarPanel = ({
   sugar,
   lines,
   outOfOrder = false,
+  unrecognized = false,
 }: Props) => {
   return (
     <>
@@ -67,6 +69,7 @@ const SugarPanel = ({
             tech={tech}
             lines={lines ?? []}
             outOfOrder={outOfOrder}
+            unrecognized={unrecognized}
           />
         </Box>
 

@@ -24,6 +24,10 @@ interface InterpretedState {
   remaining_lines: string[];
   loading: boolean;
   current_price: number | null;
+  // Full LCD frame + whether it's a screen the interpreter doesn't know
+  // (init, errors, other languages) — those are shown verbatim.
+  raw_lines?: string[];
+  unrecognized?: boolean;
 }
 
 export interface MdbStatus {
@@ -55,6 +59,8 @@ function App() {
   const [lines, setLines] = useState<string[]>(["Oczekiwanie na dane"]);
   const [tech, setTech] = useState(false);
   const [outOfOrder, setOutOfOrder] = useState(false);
+  const [rawLines, setRawLines] = useState<string[]>([]);
+  const [unrecognized, setUnrecognized] = useState(false);
 
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -159,6 +165,8 @@ function App() {
           // the bars back to 0 every time the screen shows something else.
           setSugar((prev) => data.sugar ?? prev);
           setLines(data.remaining_lines ?? []);
+          setRawLines(data.raw_lines ?? []);
+          setUnrecognized(!!data.unrecognized);
           setLoading(data.loading);
           setCurrentPrice(data.current_price ?? null);
         }
@@ -218,7 +226,8 @@ function App() {
 
           <LanguageSwitcher locale={locale} onChange={setLocale} />
 
-          {loading || ready ? (
+          {/* An unknown screen (e.g. init with a progress bar) must stay visible */}
+          {(loading || ready) && !unrecognized ? (
             <>
               <LoadingScreen ready={ready} />
               <VisuallyHidden>
@@ -226,7 +235,8 @@ function App() {
                   tech={tech}
                   status={status}
                   onClick={adjustSugar}
-                  lines={lines}
+                  lines={unrecognized ? rawLines : lines}
+                  unrecognized={unrecognized}
                   setTech={setTech}
                   setReady={setReady}
                   setCurrentPrice={setCurrentPrice}
@@ -241,7 +251,8 @@ function App() {
             <>
               <SugarPanel
                 onClick={adjustSugar}
-                lines={lines}
+                lines={unrecognized ? rawLines : lines}
+                unrecognized={unrecognized}
                 setTech={setTech}
                 outOfOrder={outOfOrder}
                 setReady={setReady}
