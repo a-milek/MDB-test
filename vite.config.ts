@@ -39,12 +39,22 @@ export default defineConfig({
   server: {
     host: true, // <-- allows access from other devices
     port: 5173, // optional, default is 5173
+    // Mirrors the nginx routes so `npm run dev` talks to the backend services directly.
+    // The ws route must precede the plain mdb_api route (first prefix match wins).
     proxy: {
-      "/sessionOpen": { target: "http://127.0.0.1:3000", changeOrigin: true },
-      "/sessionClose": { target: "http://127.0.0.1:3000", changeOrigin: true },
-      "/vendRequest": { target: "http://127.0.0.1:3000", changeOrigin: true },
-      "/vendSuccess": { target: "http://127.0.0.1:3000", changeOrigin: true },
-      "/getStatus": { target: "http://127.0.0.1:3000", changeOrigin: true },
+      "/vending-machines/mdb_api/ws": {
+        target: "ws://localhost:1234",
+        ws: true,
+        rewrite: (p) => p.replace(/^\/vending-machines\/mdb_api/, "/ota-977/MDBPay/1.0.0"),
+      },
+      "/vending-machines/mdb_api": {
+        target: "http://localhost:1234",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/vending-machines\/mdb_api/, "/ota-977/MDBPay/1.0.0"),
+      },
+      "/vending-machines/interpreter/ws": { target: "ws://localhost:8765", ws: true },
+      "/vending-machines/order": { target: "http://localhost:8080" },
+      "/vending-machines/statservice": { target: "http://localhost:8081" },
     },
   },
 });
