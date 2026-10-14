@@ -67,8 +67,9 @@ function App() {
   // funds (credit) or a price is being shown on screen.
   const hasCredit = (status?.funds_available ?? 0) > 0;
   const hasPrice = (status?.item_price ?? 0) > 0;
-  const { isTimedOut, setIsTimedOut, clearAutoResumeTimer } =
-    useIdleScreen(hasCredit || hasPrice);
+  const { isTimedOut, setIsTimedOut, clearAutoResumeTimer } = useIdleScreen(
+    hasCredit || hasPrice,
+  );
 
   // --- Price & order control ---
   const [current, setCurrentPrice] = useState<number | null>(null);
@@ -102,11 +103,12 @@ function App() {
 
   const [locale, setLocale] = useState<Locale>(LOCALES.POLISH);
 
-  const { callApi, clickButton, waitForStatus, sessionBusy } = useMdbSession({
-    status,
-    setStatus,
-    ready,
-  });
+  const { callApi, clickButton, waitForStatus, sessionBusy, lastProductRef } =
+    useMdbSession({
+      status,
+      setStatus,
+      ready,
+    });
 
   useEffect(() => {
     if (status?.is_error_state) {
@@ -176,10 +178,12 @@ function App() {
     clickButton,
     waitForStatus,
     sessionBusy,
+    lastProductRef,
     tech,
     coffeeList,
     status,
     sugar,
+    loading,
   });
 
   if (isTimedOut)

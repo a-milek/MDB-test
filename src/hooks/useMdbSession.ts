@@ -22,6 +22,8 @@ export function useMdbSession({ status, setStatus, ready }: UseMdbSessionParams)
   }, [status]);
 
   const sessionBusy = useRef(false);
+  // Set by the vend flow to the servId being dispensed, so the ready-driven
+  // effect below knows which product to report complete to statservice.
   const lastProductRef = useRef<string | number | null>(null);
   const finishedRef = useRef(false);
 
@@ -156,5 +158,11 @@ export function useMdbSession({ status, setStatus, ready }: UseMdbSessionParams)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  return { callApi, clickButton: click_button, waitForStatus, sessionBusy };
+  return {
+    callApi,
+    clickButton: click_button,
+    waitForStatus,
+    sessionBusy,
+    lastProductRef,
+  };
 }
