@@ -235,7 +235,7 @@ function App() {
                   tech={tech}
                   status={status}
                   onClick={adjustSugar}
-                  lines={unrecognized ? rawLines : lines}
+                  lines={unrecognized || !status ? rawLines : lines}
                   unrecognized={unrecognized}
                   setTech={setTech}
                   setReady={setReady}
@@ -251,7 +251,7 @@ function App() {
             <>
               <SugarPanel
                 onClick={adjustSugar}
-                lines={unrecognized ? rawLines : lines}
+                lines={unrecognized || !status ? rawLines : lines}
                 unrecognized={unrecognized}
                 setTech={setTech}
                 outOfOrder={outOfOrder}

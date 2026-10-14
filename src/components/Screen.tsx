@@ -26,7 +26,9 @@ const Screen = ({
 }: Props) => {
   const intl = useIntl();
   // Mirror the machine's LCD verbatim when we can't (or shouldn't) translate it.
-  const showRaw = tech || outOfOrder || unrecognized;
+  // Also when payservice sends no status: the LCD beats a bare "NO DATA".
+  const showRaw =
+    tech || outOfOrder || unrecognized || (!status && lines.length > 0);
 
   const friendlyLines = status
     ? [
