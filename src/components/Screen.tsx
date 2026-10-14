@@ -8,25 +8,10 @@ interface Props {
   tech: boolean;
   lines: string[];
   outOfOrder?: boolean;
-  unrecognized?: boolean;
 }
 
-// LCD custom glyphs (CGRAM 0x00-0x07: sugar/progress bars) arrive as control
-// characters; draw them as solid blocks instead of invisible/garbage chars.
-// eslint-disable-next-line no-control-regex
-const lcdText = (line: string) => line.replace(/[\x00-\x07]/g, "█");
-
-const Screen = ({
-  status,
-  sugar,
-  tech,
-  lines,
-  outOfOrder,
-  unrecognized,
-}: Props) => {
+const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
   const intl = useIntl();
-  // Mirror the machine's LCD verbatim when we can't (or shouldn't) translate it.
-  const showRaw = tech || outOfOrder || unrecognized;
 
   const friendlyLines = status
     ? [
@@ -84,7 +69,7 @@ const Screen = ({
       >
         <VStack gap={1} py={3} height="100%">
           <VStack gap={3} flex="1" justify="center" w="100%">
-            {showRaw
+            {tech || outOfOrder
             ? Array.from({ length: 4 }).map((_, i) => (
                 <Text
                   key={i}
@@ -93,7 +78,7 @@ const Screen = ({
                   fontFamily="mono"
                   whiteSpace="pre"
                 >
-                  {lcdText(lines[i] || " ")}
+                  {lines[i] || " "}
                 </Text>
               ))
             : friendlyLines.map((line, i) => (
@@ -102,7 +87,7 @@ const Screen = ({
                 </Text>
               ))}
           </VStack>
-          {tech || unrecognized ? null : (
+          {tech ? null : (
             <HStack justify="center" align="bottom" pb={2}>
               {Array.from({ length: 5 }).map((_, i) => (
                 <Box
