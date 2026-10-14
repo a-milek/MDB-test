@@ -52,7 +52,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/vending-machines\/mdb_api/, "/ota-977/MDBPay/1.0.0"),
       },
-      "/vending-machines/interpreter/ws": { target: "ws://localhost:8765", ws: true },
+      "/vending-machines/interpreter/ws": { target: "ws://localhost:3001", ws: true },
       "/vending-machines/order": { target: "http://localhost:8080" },
       "/vending-machines/statservice": { target: "http://localhost:8081" },
     },
