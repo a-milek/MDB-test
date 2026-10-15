@@ -11,6 +11,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import SugarPanel from "./components/Sugar";
 import TechKeyboard from "./components/TechKeyboard";
 import TimeoutScreen from "./components/TimeoutScreen";
+import BuildBadge from "./components/BuildBadge";
 import { useVendFlow } from "./hooks/useVendFlow";
 import { useReconnectingSocket } from "./hooks/useReconnectingSocket";
 import { useIdleScreen } from "./hooks/useIdleScreen";
@@ -198,6 +199,7 @@ function App() {
     return (
       <>
         <TimeoutScreen />
+        <BuildBadge />
       </>
     );
 
@@ -286,6 +288,7 @@ function App() {
             </>
           )}
         </Box>
+        <BuildBadge />
       </IntlProvider>
     </>
   );
