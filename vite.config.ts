@@ -54,6 +54,7 @@ export default defineConfig({
       },
       "/vending-machines/interpreter/ws": { target: "ws://localhost:3001", ws: true },
       "/vending-machines/order": { target: "http://localhost:8080" },
+      "/vending-machines/coffee-data": { target: "http://localhost:8080" },
       "/vending-machines/statservice": { target: "http://localhost:8081" },
     },
   },

@@ -6,7 +6,6 @@ import { IntlProvider } from "react-intl";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import pl from "./locales/pl.json";
 import en from "./locales/en.json";
-import coffeeData from "./config/CoffeeData";
 import LoadingScreen from "./components/LoadingScreen";
 import SugarPanel from "./components/Sugar";
 import TechKeyboard from "./components/TechKeyboard";
@@ -15,6 +14,7 @@ import { useVendFlow } from "./hooks/useVendFlow";
 import { useReconnectingSocket } from "./hooks/useReconnectingSocket";
 import { useIdleScreen } from "./hooks/useIdleScreen";
 import { useMdbSession } from "./hooks/useMdbSession";
+import { useCoffeeList } from "./hooks/useCoffeeList";
 
 interface InterpretedState {
   out_of_order: boolean;
@@ -85,18 +85,8 @@ function App() {
     currentPriceRef.current = current;
   }, [current]);
 
-  // --- Coffee List ---
-  const [coffeeList, setCoffeeList] = useState(() => {
-    try {
-      const stored = localStorage.getItem("coffee-prices");
-      return stored ? JSON.parse(stored) : coffeeData;
-    } catch {
-      return coffeeData;
-    }
-  });
-  useEffect(() => {
-    localStorage.setItem("coffee-prices", JSON.stringify(coffeeList));
-  }, [coffeeList]);
+  // --- Coffee List (saved on the Pi, see useCoffeeList) ---
+  const { coffeeList, setCoffeeList, saveError } = useCoffeeList();
 
   // --- Prevent dragging images ---
   useEffect(() => {
@@ -268,6 +258,8 @@ function App() {
                 <TechKeyboard
                   onClick={clickButton}
                   getCurrentPrice={getCurrentPrice}
+                  coffeeList={coffeeList}
+                  saveError={saveError}
                 />
               )}
 
