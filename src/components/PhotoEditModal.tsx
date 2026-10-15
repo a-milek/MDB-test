@@ -11,19 +11,16 @@ import {
   Image,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { iconsByName } from "../config/coffeeIcons";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (newImageSrc: string) => void;
+  // Icon file name, e.g. "3.png" (see config/coffeeIcons)
+  onSave: (newImage: string) => void;
 }
 
-// Dynamiczne importowanie ikon z folderu /src/assets/icons (Vite)
-const icons = import.meta.glob<string>(
-  "/src/assets/icons/*.{png,jpg,jpeg,svg}",
-  { eager: true, import: "default" },
-);
-const iconSrcs = Object.values(icons);
+const iconNames = Object.keys(iconsByName);
 
 const PhotoEditModal = ({ isOpen, onClose, onSave }: Props) => {
   const [inputValue, setInputValue] = useState("");
@@ -53,13 +50,13 @@ const PhotoEditModal = ({ isOpen, onClose, onSave }: Props) => {
         <ModalHeader>Ustaw nowy obrazek</ModalHeader>
         <ModalBody>
           <SimpleGrid columns={3} spacing={3} overflowY="auto">
-            {iconSrcs.map((src, i) => (
+            {iconNames.map((name, i) => (
               <Box
-                key={i}
-                borderColor={src === inputValue ? "blue.400" : "gray.300"}
+                key={name}
+                borderColor={name === inputValue ? "blue.400" : "gray.300"}
                 borderRadius="md"
                 cursor="none"
-                onClick={() => handleIconClick(src)}
+                onClick={() => handleIconClick(name)}
                 _hover={{ borderColor: "blue.600" }}
                 p={1}
                 display="flex"
@@ -68,7 +65,7 @@ const PhotoEditModal = ({ isOpen, onClose, onSave }: Props) => {
               >
                 <Image
                   draggable="false"
-                  src={src}
+                  src={iconsByName[name]}
                   alt={`icon-${i}`}
                   boxSize="100%"
                   objectFit="contain"

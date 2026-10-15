@@ -1,15 +1,23 @@
-import { Button, VStack, GridItem, SimpleGrid } from "@chakra-ui/react";
+import { Button, VStack, GridItem, SimpleGrid, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import key_config from "../config/KeyConfig";
+import type { CoffeeType } from "../hooks/useCoffeeList";
 
 interface NumPadProps {
   onClick: (index: number) => void;
   getCurrentPrice: () => number | null;
+  coffeeList: CoffeeType[];
+  // Set when the coffee list couldn't be saved on the Pi
+  saveError?: string | null;
 }
 
-const TechKeyboard = ({ onClick, getCurrentPrice }: NumPadProps) => {
+const TechKeyboard = ({
+  onClick,
+  getCurrentPrice,
+  coffeeList,
+  saveError,
+}: NumPadProps) => {
   const [status, setStatus] = useState<string>("");
-  const LOCAL_STORAGE_KEY = "coffee-prices";
   const ButtonStyle = {
     fontSize: "3xl",
     background: "black",
@@ -33,26 +41,10 @@ const TechKeyboard = ({ onClick, getCurrentPrice }: NumPadProps) => {
 
   const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-  // Drop the cached prices so the app re-seeds from CoffeeData.ts on reload.
-  // Without this, edits to the file are ignored once localStorage is populated.
-  // const clearPrices = () => {
-  //   localStorage.removeItem(LOCAL_STORAGE_KEY);
-  //   setStatus("Ceny wyczyszczone — przeładowanie...");
-  //   window.location.reload();
-  // };
-
   const priceLoad = async () => {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!stored) {
-      setStatus("Brak cen w localStorage");
-      return;
-    }
-
-    let coffeePrices;
-    try {
-      coffeePrices = JSON.parse(stored) as { price: number }[];
-    } catch {
-      setStatus("Błąd odczytu cen z localStorage");
+    const coffeePrices = coffeeList;
+    if (coffeePrices.length === 0) {
+      setStatus("Brak cen");
       return;
     }
 
@@ -113,6 +105,7 @@ const TechKeyboard = ({ onClick, getCurrentPrice }: NumPadProps) => {
 
   return (
     <>
+      {saveError && <Text color="yellow.300">{saveError}</Text>}
       {status}
       <VStack gap={2}>
         <SimpleGrid columns={2} gap={3} height="100%" width="80%" mx="auto">

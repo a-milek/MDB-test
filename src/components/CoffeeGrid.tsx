@@ -11,6 +11,8 @@ import PriceEditModal from "./PriceEditModal";
 import NameEditModal from "./NameEditModal";
 import PhotoEditModal from "./PhotoEditModal";
 import IndexEditModal from "./IndexEditModal";
+import type { CoffeeType } from "../hooks/useCoffeeList";
+import { iconUrl } from "../config/coffeeIcons";
 
 const ButtonStyleCancel = {
   fontSize: "3xl",
@@ -32,13 +34,6 @@ const ButtonStyle = {
   height: "100%",
   userSelect: "none" as const,
 };
-
-interface CoffeeType {
-  servId: string;
-  price: number;
-  name: string;
-  image: string;
-}
 
 interface Props {
   onClick: (index: number) => void;
@@ -206,7 +201,7 @@ const CoffeeGrid = ({
               transition="opacity 0.3s ease"
             >
               <Image
-                src={coffee.image || "assets/icons/empty.png"}
+                src={iconUrl(coffee.image) || "assets/icons/empty.png"}
                 alt={coffee.name}
                 width="100%"
                 borderRadius="lg"
