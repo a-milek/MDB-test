@@ -36,11 +36,6 @@ function buildInfo(): Plugin {
 export default defineConfig({
   base: "/vending-machines/",
   plugins: [react(), buildInfo()],
-  // Shown in the corner of the kiosk (BuildBadge) so you can tell which build is running
-  define: {
-    __BUILD_BRANCH__: JSON.stringify(git("rev-parse --abbrev-ref HEAD")),
-    __BUILD_COMMIT__: JSON.stringify(git("rev-parse --short HEAD")),
-  },
   server: {
     host: true, // <-- allows access from other devices
     port: 5173, // optional, default is 5173
