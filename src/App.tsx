@@ -208,9 +208,15 @@ function App() {
                 ? "red"
                 : "black"
           }
+          // Customer view is locked to the screen so the coffee grid can fill
+          // the leftover space; tech mode keeps scrolling for its edit buttons.
           minH="100vh"
+          h={tech ? undefined : "100dvh"}
           minW="100vw"
-          alignContent="center"
+          overflow={tech ? undefined : "hidden"}
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
         >
           {!wsConnected && <p>Reconnecting...</p>}
 

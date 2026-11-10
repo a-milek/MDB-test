@@ -1,5 +1,6 @@
 import {
   Box,
+  Grid,
   SimpleGrid,
   Image,
   Text,
@@ -24,6 +25,9 @@ const ButtonStyleCancel = {
   height: "100%",
   userSelect: "none" as const,
 };
+// Customer view: fixed column count, rows sized so the whole list fits on screen
+const CUSTOMER_COLUMNS = 4;
+
 const ButtonStyle = {
   fontSize: "3xl",
   background: "black",
@@ -178,152 +182,167 @@ const CoffeeGrid = ({
   // The active vend (if any) takes precedence over a plain click highlight
   const highlightIndex = activeIndex ?? selectedIndex;
 
+  // fit=true: tile is the largest square that fits its grid cell (customer view)
+  const renderTile = (coffee: CoffeeType, index: number, fit: boolean) => (
+    <Box
+      position="relative"
+      width={fit ? "min(100cqw, 100cqh)" : "100%"}
+      height={fit ? "min(100cqw, 100cqh)" : undefined}
+      onClickCapture={() => handleCoffeeClick(index)}
+      borderRadius="xl"
+      overflow="hidden"
+      cursor="none"
+      opacity={activeIndex !== null && activeIndex !== index ? 0.4 : 1}
+      transition="opacity 0.3s ease"
+    >
+      <Image
+        src={iconUrl(coffee.image) || "assets/icons/empty.png"}
+        alt={coffee.name}
+        width="100%"
+        height={fit ? "100%" : undefined}
+        objectFit="cover"
+        borderRadius="lg"
+        draggable={false}
+        userSelect="none"
+      />
+      <Text
+        position="absolute"
+        bottom={0}
+        left={0}
+        bg="white"
+        opacity={"70%"}
+        color="#242424"
+        width="100%"
+        height="25%"
+        fontSize={fit ? "clamp(0.75rem, 9cqmin, 2.25rem)" : "xl"}
+        fontWeight="bold"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        pointerEvents="none"
+        userSelect="none"
+        borderBottomRadius="lg"
+      >
+        {coffee.price.toFixed(2).replace(".", ",")}zł
+      </Text>
+
+      <Box
+        position="absolute"
+        inset={0}
+        borderWidth="3px"
+        borderColor={highlightIndex === index ? "white" : "black"}
+        borderRadius="xl"
+        transition="border-color 0.3s ease"
+        pointerEvents="none"
+        zIndex={1}
+      />
+
+      <Text
+        position="absolute"
+        top={fit ? "4%" : 3}
+        left={0}
+        width="100%"
+        px={1}
+        color="white"
+        fontSize={fit ? "clamp(0.75rem, 8cqmin, 2rem)" : "xl"}
+        lineHeight="short"
+        fontWeight="bold"
+        pointerEvents="none"
+        userSelect="none"
+        textAlign="center"
+      >
+        {coffee.name}
+      </Text>
+
+      {tech && (
+        <Text
+          position="absolute"
+          bottom={3}
+          right={3}
+          bg="whiteAlpha.800"
+          color="black"
+          fontWeight="bold"
+          fontSize="lg"
+          px={2}
+          py={1}
+          borderRadius="md"
+          userSelect="none"
+          pointerEvents="none"
+          minWidth="24px"
+          textAlign="center"
+        >
+          {servIdToDisplayNumber(coffee.servId)}
+        </Text>
+      )}
+    </Box>
+  );
+
+  const techButtons = [
+    ["Cena", handleSetPriceClick],
+    ["Nazwa", handleSetNameClick],
+    ["Obrazek", handleSetPicClick],
+    ["Indeks", handleSetIndexClick],
+  ] as const;
+
+  const customerRows = Math.max(
+    1,
+    Math.ceil(coffeeList.length / CUSTOMER_COLUMNS),
+  );
+
   return (
     <>
-      <SimpleGrid
-        columns={tech ? 5: 3}
-        gap={5}
-        paddingY={5}
-        height="100%"
-        width={tech ? "80%" : "80%"}
-        mx="auto"
-      >
-        {coffeeList.map((coffee, index) => (
-          <Box key={index}>
-            <Box
-              position="relative"
-              width="100%"
-              onClickCapture={() => handleCoffeeClick(index)}
-              borderRadius="xl"
-              overflow="hidden"
-              cursor="none"
-              opacity={activeIndex !== null && activeIndex !== index ? 0.4 : 1}
-              transition="opacity 0.3s ease"
-            >
-              <Image
-                src={iconUrl(coffee.image) || "assets/icons/empty.png"}
-                alt={coffee.name}
-                width="100%"
-                borderRadius="lg"
-                draggable={false}
-                userSelect="none"
-              />
-              <Text
-                position="absolute"
-                bottom={0}
-                left={0}
-                bg="white"
-                opacity={"70%"}
-                color="#242424"
-                width="100%"
-                height="25%"
-                fontSize="xl"
-                fontWeight="bold"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                pointerEvents="none"
-                userSelect="none"
-                borderBottomRadius="lg"
-              >
-                {coffee.price.toFixed(2).replace(".", ",")}zł
-              </Text>
-
-              <Box
-                position="absolute"
-                inset={0}
-                borderWidth="3px"
-                borderColor={highlightIndex === index ? "white" : "black"}
-                borderRadius="xl"
-                transition="border-color 0.3s ease"
-                pointerEvents="none"
-                zIndex={1}
-              />
-
-              <Text
-                position="absolute"
-                top={3}
-                left={0}
-                width="100%"
-                color="white"
-                fontSize="xl"
-                fontWeight="bold"
-                pointerEvents="none"
-                userSelect="none"
-                textAlign="center"
-              >
-                {coffee.name}
-              </Text>
-
-              {tech && (
-                <Text
-                  position="absolute"
-                  bottom={3}
-                  right={3}
-                  bg="whiteAlpha.800"
-                  color="black"
-                  fontWeight="bold"
-                  fontSize="lg"
-                  px={2}
-                  py={1}
-                  borderRadius="md"
-                  userSelect="none"
-                  pointerEvents="none"
-                  minWidth="24px"
-                  textAlign="center"
-                >
-                  {servIdToDisplayNumber(coffee.servId)}
-                </Text>
-              )}
+      {tech ? (
+        <SimpleGrid columns={5} gap={5} paddingY={5} width="80%" mx="auto">
+          {coffeeList.map((coffee, index) => (
+            <Box key={index}>
+              {renderTile(coffee, index, false)}
+              {techButtons.map(([label, handler]) => (
+                <Box mt={2} key={label}>
+                  <Button
+                    size="md"
+                    {...ButtonStyle}
+                    onClick={() => handler(index)}
+                  >
+                    {label}
+                  </Button>
+                </Box>
+              ))}
             </Box>
-            {tech && (
-              <>
-                <Box mt={2}>
-                  <Button
-                    size="md"
-                    {...ButtonStyle}
-                    onClick={() => handleSetPriceClick(index)}
-                  >
-                    Cena
-                  </Button>
-                </Box>
-                <Box mt={2}>
-                  <Button
-                    size="md"
-                    {...ButtonStyle}
-                    onClick={() => handleSetNameClick(index)}
-                  >
-                    Nazwa
-                  </Button>
-                </Box>
-                <Box mt={2}>
-                  <Button
-                    size="md"
-                    onClick={() => handleSetPicClick(index)}
-                    {...ButtonStyle}
-                  >
-                    Obrazek
-                  </Button>
-                </Box>
-                <Box mt={2}>
-                  <Button
-                    size="md"
-                    onClick={() => handleSetIndexClick(index)}
-                    {...ButtonStyle}
-                  >
-                    Indeks
-                  </Button>
-                </Box>
-              </>
-            )}
-          </Box>
-        ))}
-      </SimpleGrid>
+          ))}
+        </SimpleGrid>
+      ) : (
+        <Grid
+          flex="1"
+          minH={0}
+          width="min(100%, 1600px)"
+          mx="auto"
+          p="2vmin"
+          gap="2vmin"
+          templateColumns={`repeat(${CUSTOMER_COLUMNS}, minmax(0, 1fr))`}
+          templateRows={`repeat(${customerRows}, minmax(0, 1fr))`}
+        >
+          {coffeeList.map((coffee, index) => (
+            <Box
+              key={index}
+              minW={0}
+              minH={0}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              sx={{ containerType: "size" }}
+            >
+              {renderTile(coffee, index, true)}
+            </Box>
+          ))}
+        </Grid>
+      )}
       {cancelOrder && (activeIndex !== null || hasFunds) && (
         <Button
           {...ButtonStyleCancel}
           width="80%"
           height="auto"
+          flexShrink={0}
+          mb="2vmin"
           mx="auto"
           display="block"
           onClick={cancelOrder}

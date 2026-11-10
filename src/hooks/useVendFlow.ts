@@ -187,16 +187,18 @@ export function useVendFlow({
       // dispense makes the machine start brewing (progress bar → `loading`) —
       // once it's brewing the vend is going through, so we finalize right away.
       // If it doesn't move within the window the press likely didn't take:
-      // don't finalize, leaving the session open.
+      // skip vendSuccess, but still close the session so it isn't left hanging.
       const moved = await waitForFlag(() => loadingRef.current, MOVE_TIMEOUT_MS);
       if (moved) {
         await callApi("vendSuccess", { itemNumber: index });
-        await callApi("sessionClose");
-
-        await waitForStatus((s) => !s?.session_is_open, 120000);
-
-        await callApi("sessionOpen");
+      } else {
+        console.warn("Machine did not start brewing in time; closing session");
       }
+      await callApi("sessionClose");
+
+      await waitForStatus((s) => !s?.session_is_open, 120000);
+
+      await callApi("sessionOpen");
     } catch (err) {
       if (err instanceof Error && err.message === "Cancelled") {
         // cancelOrder owns the session close/reopen; just release the lock
