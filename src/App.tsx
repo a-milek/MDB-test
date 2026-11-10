@@ -15,6 +15,7 @@ import { useReconnectingSocket } from "./hooks/useReconnectingSocket";
 import { useIdleScreen } from "./hooks/useIdleScreen";
 import { useMdbSession } from "./hooks/useMdbSession";
 import { useCoffeeList } from "./hooks/useCoffeeList";
+import { useRemoteReload } from "./hooks/useRemoteReload";
 
 interface InterpretedState {
   out_of_order: boolean;
@@ -183,6 +184,9 @@ function App() {
     sugar,
     loading,
   });
+
+  // Reload on remote request / new deploy, but never mid-order or in tech mode
+  useRemoteReload(tech || activeVendIndex !== null || hasCredit || hasPrice);
 
   if (isTimedOut)
     return (
