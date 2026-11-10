@@ -15,9 +15,12 @@ const TimeoutScreen = () => {
   return (
     <>
       {selectedAd && (
+        // Pinned to the viewport so the ad always fits the screen (no scrollbars),
+        // letterboxed on black when its aspect ratio differs from the screen's
         <Flex
-          minW="100vw"
-          minH="100vh"
+          position="fixed"
+          inset={0}
+          overflow="hidden"
           justify="center"
           align="center"
           bg="black"
@@ -29,6 +32,8 @@ const TimeoutScreen = () => {
             objectFit="contain"
             width="100%"
             height="100%"
+            maxW="100%"
+            maxH="100%"
           />
         </Flex>
       )}

@@ -15,8 +15,14 @@ const COFFEE_DATA_URL = `${import.meta.env.BASE_URL}coffee-data`;
 const LOCAL_STORAGE_KEY = "coffee-prices";
 const RETRY_MS = 10_000;
 
+// Saved lists shorter than the default (e.g. 15 from before the 16th slot was
+// added) are topped up with the remaining default entries, so every kiosk
+// shows all buttons. Longer lists are kept as-is.
 const normalize = (list: CoffeeType[]): CoffeeType[] =>
-  list.map((c) => ({ ...c, image: iconName(c.image) }));
+  [...list, ...(coffeeData as CoffeeType[]).slice(list.length)].map((c) => ({
+    ...c,
+    image: iconName(c.image),
+  }));
 
 function loadLocal(): CoffeeType[] {
   try {

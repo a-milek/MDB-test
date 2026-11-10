@@ -43,5 +43,7 @@ const coffeeData = [
   { id: 13, servId: "15", name: "Barszcz", price: 4.5, },
   { id: 14, servId: "16", name: "Herbata", price: 4.5, },
   { id: 15, servId: "17", name: "Gorąca Woda", price: 3 },
+  // Spare slot — set name/price/image/index in tech mode
+  { id: 16, servId: "18", name: "Nowy napój", price: 4.5 },
 ];
 export default coffeeData;
