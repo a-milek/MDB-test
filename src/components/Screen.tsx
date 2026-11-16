@@ -62,9 +62,9 @@ const Screen = ({
 
         status.is_card_only ? intl.formatMessage({ id: "card_only" }) : null,
 
-        status.is_notes_not_accepted
-          ? intl.formatMessage({ id: "notes_not_accepted" })
-          : null,
+        // status.is_notes_not_accepted
+        //   ? intl.formatMessage({ id: "notes_not_accepted" })
+        //   : null,
       ].filter(Boolean)
     : ["NO DATA"];
 

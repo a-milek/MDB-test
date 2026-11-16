@@ -1,4 +1,5 @@
-import { Box, HStack, Image } from "@chakra-ui/react";
+import { Box, Grid, Image } from "@chakra-ui/react";
+import { CUSTOMER_COLUMNS } from "./CoffeeGrid";
 // import ScreenInterpreter from "./ScreenInterpreter";
 import type { CSSProperties } from "react";
 import key_config from "../config/KeyConfig";
@@ -40,15 +41,20 @@ const SugarPanel = ({
 }: Props) => {
   return (
     <>
-      <HStack
-        gap={5}
-        py={2}
-        width="80%"
+      {/* Same columns, width, padding and gap as the customer CoffeeGrid, so
+          "-" sits over the first column, the screen spans the middle ones and
+          "+" sits over the last. paddingTop clears the fixed LanguageSwitcher
+          (top 32px + 40px buttons). */}
+      <Grid
+        flexShrink={0}
+        width="min(100%, 1600px)"
         mx="auto"
-        paddingTop="40px"
-        align="stretch"
+        px="2vmin"
+        paddingTop="88px"
+        gap="2vmin"
+        templateColumns={`repeat(${CUSTOMER_COLUMNS}, minmax(0, 1fr))`}
       >
-        <Box width="25%" style={noDragStyle}>
+        <Box minW={0} style={noDragStyle}>
           <Image
             src="assets/less_sugar.png"
             width="100%"
@@ -62,7 +68,11 @@ const SugarPanel = ({
 
         {/* Stretches to the row height set by the square +/- buttons, so the
             screen ends up exactly as tall as them. */}
-        <Box width="50%" minW={0} style={noDragStyle}>
+        <Box
+          gridColumn={`span ${CUSTOMER_COLUMNS - 2}`}
+          minW={0}
+          style={noDragStyle}
+        >
           <Screen
             status={status}
             sugar={sugar}
@@ -73,7 +83,7 @@ const SugarPanel = ({
           />
         </Box>
 
-        <Box width="25%" style={noDragStyle}>
+        <Box minW={0} style={noDragStyle}>
           <Image
             src="assets/more_sugar.png"
             width="100%"
@@ -84,7 +94,7 @@ const SugarPanel = ({
             userSelect="none"
           />
         </Box>
-      </HStack>
+      </Grid>
       {/* <VStack gap={2} paddingY={2} height="7vh">
         <SimpleGrid columns={1} gap={3} height="100%" width="80%" mx="auto">
           <GridItem>

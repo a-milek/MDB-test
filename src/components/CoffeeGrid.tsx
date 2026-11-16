@@ -26,7 +26,7 @@ const ButtonStyleCancel = {
   userSelect: "none" as const,
 };
 // Customer view: fixed column count, rows sized so the whole list fits on screen
-const CUSTOMER_COLUMNS = 4;
+export const CUSTOMER_COLUMNS = 4;
 
 const ButtonStyle = {
   fontSize: "3xl",
