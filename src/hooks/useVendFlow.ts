@@ -158,6 +158,8 @@ export function useVendFlow({
     }
     if (activeVendIndex !== null) return; // a vend is already in progress
     setActiveVendIndex(index);
+    // True while this flow holds sessionBusy for its own close → reopen.
+    let ownsSession = false;
     try {
       await callApi("vendRequest", {
         price: coffeeList[index].price,
@@ -189,6 +191,14 @@ export function useVendFlow({
       // If it doesn't move within the window the press likely didn't take:
       // skip vendSuccess, but still close the session so it isn't left hanging.
       const moved = await waitForFlag(() => loadingRef.current, MOVE_TIMEOUT_MS);
+
+      // From here this flow closes and reopens the session itself. Hold
+      // sessionBusy so useMdbSession's auto-reopen doesn't reopen it the moment
+      // it closes — we'd never see it closed and sit out the whole timeout
+      // with the coffee grid locked.
+      sessionBusy.current = true;
+      ownsSession = true;
+
       if (moved) {
         await callApi("vendSuccess", { itemNumber: index });
       } else {
@@ -196,20 +206,23 @@ export function useVendFlow({
       }
       await callApi("sessionClose");
 
-      await waitForStatus((s) => !s?.session_is_open, 120000);
+      await waitForStatus((s) => !s?.session_is_open, 20000);
 
       await callApi("sessionOpen");
     } catch (err) {
       if (err instanceof Error && err.message === "Cancelled") {
         // cancelOrder owns the session close/reopen; just release the lock
         console.log("Vend cancelled by user");
-        
+
       } else {
         console.error("Vend flow failed:", err);
+        sessionBusy.current = true;
+        ownsSession = true;
         await callApi("sessionClose");
         await callApi("sessionOpen");
       }
     } finally {
+      if (ownsSession) sessionBusy.current = false;
       vendApprovedRef.current = false;
       setActiveVendIndex(null);
       setCancelCountdown(null); // stop the idle countdown if it was running
