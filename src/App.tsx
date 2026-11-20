@@ -29,7 +29,14 @@ interface InterpretedState {
   // (init, errors, other languages) — those are shown verbatim.
   raw_lines?: string[];
   unrecognized?: boolean;
+  // Lines the interpreter didn't understand (e.g. "Kawa ziarn.niedostep");
+  // shown as an extra line under the normal screen text.
+  unknown_lines?: string[];
 }
+
+// The machine blinks its messages, so keep an unknown line on screen this long
+// after it was last seen instead of flickering with the LCD.
+const UNKNOWN_LINE_HOLD_MS = 5000;
 
 export interface MdbStatus {
   is_error_state: boolean;
@@ -62,6 +69,8 @@ function App() {
   const [outOfOrder, setOutOfOrder] = useState(false);
   const [rawLines, setRawLines] = useState<string[]>([]);
   const [unrecognized, setUnrecognized] = useState(false);
+  const [unknownLines, setUnknownLines] = useState<string[]>([]);
+  const unknownLinesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -158,6 +167,14 @@ function App() {
           setLines(data.remaining_lines ?? []);
           setRawLines(data.raw_lines ?? []);
           setUnrecognized(!!data.unrecognized);
+          if (data.unknown_lines?.length) {
+            setUnknownLines(data.unknown_lines);
+            if (unknownLinesTimer.current) clearTimeout(unknownLinesTimer.current);
+            unknownLinesTimer.current = setTimeout(
+              () => setUnknownLines([]),
+              UNKNOWN_LINE_HOLD_MS,
+            );
+          }
           setLoading(data.loading);
           setCurrentPrice(data.current_price ?? null);
         }
@@ -253,6 +270,7 @@ function App() {
                 onClick={adjustSugar}
                 lines={unrecognized || !status ? rawLines : lines}
                 unrecognized={unrecognized}
+                unknownLines={unknownLines}
                 setTech={setTech}
                 outOfOrder={outOfOrder}
                 setReady={setReady}

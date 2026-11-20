@@ -28,6 +28,7 @@ interface Props {
   sugar: number;
   outOfOrder?: boolean;
   unrecognized?: boolean;
+  unknownLines?: string[];
 }
 
 const SugarPanel = ({
@@ -38,6 +39,7 @@ const SugarPanel = ({
   lines,
   outOfOrder = false,
   unrecognized = false,
+  unknownLines = [],
 }: Props) => {
   return (
     <>
@@ -80,6 +82,7 @@ const SugarPanel = ({
             lines={lines ?? []}
             outOfOrder={outOfOrder}
             unrecognized={unrecognized}
+            unknownLines={unknownLines}
           />
         </Box>
 

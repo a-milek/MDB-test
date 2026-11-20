@@ -9,6 +9,8 @@ interface Props {
   lines: string[];
   outOfOrder?: boolean;
   unrecognized?: boolean;
+  /** LCD lines the interpreter didn't understand; shown under the normal text. */
+  unknownLines?: string[];
 }
 
 // LCD custom glyphs (CGRAM 0x00-0x07: sugar/progress bars) arrive as control
@@ -23,6 +25,7 @@ const Screen = ({
   lines,
   outOfOrder,
   unrecognized,
+  unknownLines = [],
 }: Props) => {
   const intl = useIntl();
   // Mirror the machine's LCD verbatim when we can't (or shouldn't) translate it.
@@ -98,11 +101,24 @@ const Screen = ({
                   {lcdText(lines[i] || " ")}
                 </Text>
               ))
-            : friendlyLines.map((line, i) => (
-                <Text key={i} color="white" fontSize="2xl">
-                  {line}
-                </Text>
-              ))}
+            : [
+                ...friendlyLines.map((line, i) => (
+                  <Text key={i} color="white" fontSize="2xl">
+                    {line}
+                  </Text>
+                )),
+                // Machine messages we don't translate, shown as-is
+                ...unknownLines.map((line, i) => (
+                  <Text
+                    key={`unknown-${i}`}
+                    color="orange.300"
+                    fontSize="xl"
+                    fontFamily="mono"
+                  >
+                    {lcdText(line)}
+                  </Text>
+                )),
+              ]}
           </VStack>
           {tech || unrecognized ? null : (
             <HStack justify="center" align="bottom" pb={2}>
