@@ -8,10 +8,30 @@ interface Props {
   tech: boolean;
   lines: string[];
   outOfOrder?: boolean;
+  unrecognized?: boolean;
+  /** LCD lines the interpreter didn't understand; shown under the normal text. */
+  unknownLines?: string[];
 }
 
-const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
+// LCD custom glyphs (CGRAM 0x00-0x07: sugar/progress bars) arrive as control
+// characters; draw them as solid blocks instead of invisible/garbage chars.
+// eslint-disable-next-line no-control-regex
+const lcdText = (line: string) => line.replace(/[\x00-\x07]/g, "█");
+
+const Screen = ({
+  status,
+  sugar,
+  tech,
+  lines,
+  outOfOrder,
+  unrecognized,
+  unknownLines = [],
+}: Props) => {
   const intl = useIntl();
+  // Mirror the machine's LCD verbatim when we can't (or shouldn't) translate it.
+  // Also when payservice sends no status: the LCD beats a bare "NO DATA".
+  const showRaw =
+    tech || outOfOrder || unrecognized || (!status && lines.length > 0);
 
   const friendlyLines = status
     ? [
@@ -45,9 +65,9 @@ const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
 
         status.is_card_only ? intl.formatMessage({ id: "card_only" }) : null,
 
-        status.is_notes_not_accepted
-          ? intl.formatMessage({ id: "notes_not_accepted" })
-          : null,
+        // status.is_notes_not_accepted
+        //   ? intl.formatMessage({ id: "notes_not_accepted" })
+        //   : null,
       ].filter(Boolean)
     : ["NO DATA"];
 
@@ -69,7 +89,7 @@ const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
       >
         <VStack gap={1} py={3} height="100%">
           <VStack gap={3} flex="1" justify="center" w="100%">
-            {tech || outOfOrder
+            {showRaw
             ? Array.from({ length: 4 }).map((_, i) => (
                 <Text
                   key={i}
@@ -78,16 +98,29 @@ const Screen = ({ status, sugar, tech, lines, outOfOrder }: Props) => {
                   fontFamily="mono"
                   whiteSpace="pre"
                 >
-                  {lines[i] || " "}
+                  {lcdText(lines[i] || " ")}
                 </Text>
               ))
-            : friendlyLines.map((line, i) => (
-                <Text key={i} color="white" fontSize="2xl">
-                  {line}
-                </Text>
-              ))}
+            : [
+                ...friendlyLines.map((line, i) => (
+                  <Text key={i} color="white" fontSize="2xl">
+                    {line}
+                  </Text>
+                )),
+                // Machine messages we don't translate, shown as-is
+                ...unknownLines.map((line, i) => (
+                  <Text
+                    key={`unknown-${i}`}
+                    color="orange.300"
+                    fontSize="xl"
+                    fontFamily="mono"
+                  >
+                    {lcdText(line)}
+                  </Text>
+                )),
+              ]}
           </VStack>
-          {tech ? null : (
+          {tech || unrecognized ? null : (
             <HStack justify="center" align="bottom" pb={2}>
               {Array.from({ length: 5 }).map((_, i) => (
                 <Box

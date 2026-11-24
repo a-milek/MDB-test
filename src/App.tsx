@@ -15,6 +15,7 @@ import { useVendFlow } from "./hooks/useVendFlow";
 import { useReconnectingSocket } from "./hooks/useReconnectingSocket";
 import { useIdleScreen } from "./hooks/useIdleScreen";
 import { useMdbSession } from "./hooks/useMdbSession";
+import { useRemoteReload } from "./hooks/useRemoteReload";
 
 interface InterpretedState {
   out_of_order: boolean;
@@ -24,7 +25,18 @@ interface InterpretedState {
   remaining_lines: string[];
   loading: boolean;
   current_price: number | null;
+  // Full LCD frame + whether it's a screen the interpreter doesn't know
+  // (init, errors, other languages) — those are shown verbatim.
+  raw_lines?: string[];
+  unrecognized?: boolean;
+  // Lines the interpreter didn't understand (e.g. "Kawa ziarn.niedostep");
+  // shown as an extra line under the normal screen text.
+  unknown_lines?: string[];
 }
+
+// The machine blinks its messages, so keep an unknown line on screen this long
+// after it was last seen instead of flickering with the LCD.
+const UNKNOWN_LINE_HOLD_MS = 5000;
 
 export interface MdbStatus {
   is_error_state: boolean;
@@ -55,6 +67,10 @@ function App() {
   const [lines, setLines] = useState<string[]>(["Oczekiwanie na dane"]);
   const [tech, setTech] = useState(false);
   const [outOfOrder, setOutOfOrder] = useState(false);
+  const [rawLines, setRawLines] = useState<string[]>([]);
+  const [unrecognized, setUnrecognized] = useState(false);
+  const [unknownLines, setUnknownLines] = useState<string[]>([]);
+  const unknownLinesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -159,6 +175,16 @@ function App() {
           // the bars back to 0 every time the screen shows something else.
           setSugar((prev) => data.sugar ?? prev);
           setLines(data.remaining_lines ?? []);
+          setRawLines(data.raw_lines ?? []);
+          setUnrecognized(!!data.unrecognized);
+          if (data.unknown_lines?.length) {
+            setUnknownLines(data.unknown_lines);
+            if (unknownLinesTimer.current) clearTimeout(unknownLinesTimer.current);
+            unknownLinesTimer.current = setTimeout(
+              () => setUnknownLines([]),
+              UNKNOWN_LINE_HOLD_MS,
+            );
+          }
           setLoading(data.loading);
           setCurrentPrice(data.current_price ?? null);
         }
@@ -185,6 +211,9 @@ function App() {
     sugar,
     loading,
   });
+
+  // Reload on remote request / new deploy, but never mid-order or in tech mode
+  useRemoteReload(tech || activeVendIndex !== null || hasCredit || hasPrice);
 
   if (isTimedOut)
     return (
@@ -218,7 +247,8 @@ function App() {
 
           <LanguageSwitcher locale={locale} onChange={setLocale} />
 
-          {loading || ready ? (
+          {/* An unknown screen (e.g. init with a progress bar) must stay visible */}
+          {(loading || ready) && !unrecognized ? (
             <>
               <LoadingScreen ready={ready} />
               <VisuallyHidden>
@@ -226,7 +256,8 @@ function App() {
                   tech={tech}
                   status={status}
                   onClick={adjustSugar}
-                  lines={lines}
+                  lines={unrecognized || !status ? rawLines : lines}
+                  unrecognized={unrecognized}
                   setTech={setTech}
                   setReady={setReady}
                   setCurrentPrice={setCurrentPrice}
@@ -241,7 +272,9 @@ function App() {
             <>
               <SugarPanel
                 onClick={adjustSugar}
-                lines={lines}
+                lines={unrecognized || !status ? rawLines : lines}
+                unrecognized={unrecognized}
+                unknownLines={unknownLines}
                 setTech={setTech}
                 outOfOrder={outOfOrder}
                 setReady={setReady}
