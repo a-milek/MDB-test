@@ -7,13 +7,13 @@ interface UseMdbSessionParams {
   setStatus: Dispatch<SetStateAction<MdbStatus | null>>;
   /** Drives the "report completion to statservice" effect. */
   ready: boolean;
-  /** The machine's LCD says it's out of order (e.g. "AUTOMAT SPRZEDAJACY NIECZYNNY"). */
-  outOfOrder: boolean;
+  /** The machine is on (or came from) the "WYBIERZ NAPOJ" screen and can sell. */
+  canSell: boolean;
 }
 
-// How long the machine must stay out of order before payments are switched off,
-// so a single flickering LCD frame doesn't close the session.
-const OUT_OF_ORDER_DELAY_MS = 3000;
+// How long the machine must stay unable to sell before an open session is
+// closed, so a single flickering LCD frame doesn't close it.
+const CANT_SELL_DELAY_MS = 3000;
 
 /**
  * Owns the MDB/payservice HTTP layer: the `callApi` helper, the `waitForStatus`
@@ -21,17 +21,17 @@ const OUT_OF_ORDER_DELAY_MS = 3000;
  * session auto-reopen effect that keeps a session live whenever the machine
  * isn't in an error/service state. Exposes the pieces the vend flow needs.
  */
-export function useMdbSession({ status, setStatus, ready, outOfOrder }: UseMdbSessionParams) {
-  // outOfOrder, but only once it has held for OUT_OF_ORDER_DELAY_MS; clears at once
-  const [outOfOrderSettled, setOutOfOrderSettled] = useState(false);
+export function useMdbSession({ status, setStatus, ready, canSell }: UseMdbSessionParams) {
+  // !canSell, but only once it has held for CANT_SELL_DELAY_MS; clears at once
+  const [cantSellSettled, setCantSellSettled] = useState(false);
   useEffect(() => {
-    if (!outOfOrder) {
-      setOutOfOrderSettled(false);
+    if (canSell) {
+      setCantSellSettled(false);
       return;
     }
-    const t = setTimeout(() => setOutOfOrderSettled(true), OUT_OF_ORDER_DELAY_MS);
+    const t = setTimeout(() => setCantSellSettled(true), CANT_SELL_DELAY_MS);
     return () => clearTimeout(t);
-  }, [outOfOrder]);
+  }, [canSell]);
 
   const statusRef = useRef(status);
   useEffect(() => {
@@ -151,11 +151,13 @@ export function useMdbSession({ status, setStatus, ready, outOfOrder }: UseMdbSe
     if (!status || sessionBusy.current) return;
     if (status.is_error_state || status.is_service_state) return;
 
-    // Machine out of order: keep the session closed so the coin changer, note
-    // validator and card reader are disabled and take no money. Closing returns
-    // any escrowed cash. Don't cut into a sale that's already approved/in progress.
-    if (outOfOrderSettled) {
-      if (status.session_is_open && !status.vend_approved && !status.item_price) {
+    // Machine not on "WYBIERZ NAPOJ" (heating, brewing, out of order, unknown
+    // screen…): never open a session, and close an idle one once that has held
+    // for a few seconds, so the coin changer, note validator and card reader are
+    // disabled and take no money. Closing returns any escrowed cash. Don't cut
+    // into a sale that's already approved/in progress.
+    if (!canSell) {
+      if (cantSellSettled && status.session_is_open && !status.vend_approved && !status.item_price) {
         sessionBusy.current = true;
         console.warn("Machine out of order; closing payment session");
         callApi("sessionClose").finally(() => {
@@ -187,7 +189,7 @@ export function useMdbSession({ status, setStatus, ready, outOfOrder }: UseMdbSe
     if (status.session_is_requested_to_cancel) reopen(true);
     else if (!status.session_is_open) reopen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, outOfOrderSettled]);
+  }, [status, canSell, cantSellSettled]);
 
   return {
     callApi,

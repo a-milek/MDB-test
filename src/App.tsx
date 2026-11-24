@@ -67,6 +67,11 @@ function App() {
   const [lines, setLines] = useState<string[]>(["Oczekiwanie na dane"]);
   const [tech, setTech] = useState(false);
   const [outOfOrder, setOutOfOrder] = useState(false);
+  // True while the LCD shows "WYBIERZ NAPOJ" (idle) or "WYBRANY" (a drink was
+  // selected); stays true through
+  // the normal sale screens and drops on out of order, tech, brewing/heating
+  // progress or any unknown screen. Payments are only accepted while it's true.
+  const [canSell, setCanSell] = useState(false);
   const [rawLines, setRawLines] = useState<string[]>([]);
   const [unrecognized, setUnrecognized] = useState(false);
   const [unknownLines, setUnknownLines] = useState<string[]>([]);
@@ -114,7 +119,7 @@ function App() {
       status,
       setStatus,
       ready,
-      outOfOrder,
+      canSell,
     });
 
   useEffect(() => {
@@ -153,11 +158,20 @@ function App() {
       onClose: () => {
         console.log("Disconnected from interpreter WS");
         setWsConnected(false);
+        setCanSell(false); // can't see the machine's screen, so don't take money
       },
       onMessage: (payload) => {
         if (payload.type === "interpreted_state") {
           const data = payload.state;
           setOutOfOrder(data.out_of_order);
+          setCanSell((prev) => {
+            if (data.out_of_order || data.tech || data.unrecognized) return false;
+            // WYBIERZ = idle "choose a drink"; WYBRANY = a drink button was just pressed
+            if ((data.raw_lines ?? []).some((l) => l.startsWith("WYBIERZ") || l.startsWith("WYBRANY")))
+              return true;
+            if (data.loading) return false; // brewing / heating progress bar
+            return prev;
+          });
           setTech(!!data.tech);
           setReady(!!data.ready);
           // The interpreter reports sugar per-frame and sends null on any frame
