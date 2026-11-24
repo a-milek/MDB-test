@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { MdbStatus } from "../App";
 
@@ -7,7 +7,13 @@ interface UseMdbSessionParams {
   setStatus: Dispatch<SetStateAction<MdbStatus | null>>;
   /** Drives the "report completion to statservice" effect. */
   ready: boolean;
+  /** The machine's LCD says it's out of order (e.g. "AUTOMAT SPRZEDAJACY NIECZYNNY"). */
+  outOfOrder: boolean;
 }
+
+// How long the machine must stay out of order before payments are switched off,
+// so a single flickering LCD frame doesn't close the session.
+const OUT_OF_ORDER_DELAY_MS = 3000;
 
 /**
  * Owns the MDB/payservice HTTP layer: the `callApi` helper, the `waitForStatus`
@@ -15,7 +21,18 @@ interface UseMdbSessionParams {
  * session auto-reopen effect that keeps a session live whenever the machine
  * isn't in an error/service state. Exposes the pieces the vend flow needs.
  */
-export function useMdbSession({ status, setStatus, ready }: UseMdbSessionParams) {
+export function useMdbSession({ status, setStatus, ready, outOfOrder }: UseMdbSessionParams) {
+  // outOfOrder, but only once it has held for OUT_OF_ORDER_DELAY_MS; clears at once
+  const [outOfOrderSettled, setOutOfOrderSettled] = useState(false);
+  useEffect(() => {
+    if (!outOfOrder) {
+      setOutOfOrderSettled(false);
+      return;
+    }
+    const t = setTimeout(() => setOutOfOrderSettled(true), OUT_OF_ORDER_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [outOfOrder]);
+
   const statusRef = useRef(status);
   useEffect(() => {
     statusRef.current = status;
@@ -134,6 +151,20 @@ export function useMdbSession({ status, setStatus, ready }: UseMdbSessionParams)
     if (!status || sessionBusy.current) return;
     if (status.is_error_state || status.is_service_state) return;
 
+    // Machine out of order: keep the session closed so the coin changer, note
+    // validator and card reader are disabled and take no money. Closing returns
+    // any escrowed cash. Don't cut into a sale that's already approved/in progress.
+    if (outOfOrderSettled) {
+      if (status.session_is_open && !status.vend_approved && !status.item_price) {
+        sessionBusy.current = true;
+        console.warn("Machine out of order; closing payment session");
+        callApi("sessionClose").finally(() => {
+          sessionBusy.current = false;
+        });
+      }
+      return;
+    }
+
     const reopen = async (close: boolean) => {
       sessionBusy.current = true;
       try {
@@ -156,7 +187,7 @@ export function useMdbSession({ status, setStatus, ready }: UseMdbSessionParams)
     if (status.session_is_requested_to_cancel) reopen(true);
     else if (!status.session_is_open) reopen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, [status, outOfOrderSettled]);
 
   return {
     callApi,
